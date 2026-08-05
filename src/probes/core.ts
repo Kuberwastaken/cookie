@@ -4,7 +4,7 @@ const sig = (id: string, label: string, value: unknown, extra: Partial<Signal> =
   id, label, value, ...extra,
 });
 
-/** Platform, browser and locale — the mundane stuff, stated with uncomfortable precision. */
+/** Platform, browser and locale, the mundane stuff, stated with uncomfortable precision. */
 export const platformProbe: Probe = {
   id: 'platform',
   title: 'Platform',
@@ -70,7 +70,7 @@ export const platformProbe: Probe = {
   },
 };
 
-/** Screen geometry, pixel ratio, and — via rAF — the actual refresh rate. */
+/** Screen geometry, pixel ratio, and, via rAF, the actual refresh rate. */
 export const displayProbe: Probe = {
   id: 'display',
   title: 'Display',
@@ -93,7 +93,7 @@ export const displayProbe: Probe = {
     ];
 
     // The gap between the browser window and the screen tells you roughly how
-    // much OS chrome is present — menu bar, dock, taskbar position.
+    // much OS chrome is present, menu bar, dock, taskbar position.
     out.push(sig('display.chromeHeight', 'OS chrome height', s.height - s.availHeight));
     out.push(sig('display.chromeWidth', 'OS chrome width', s.width - s.availWidth));
 
@@ -212,7 +212,7 @@ export const environmentProbe: Probe = {
   },
 };
 
-/** Codec support — a decent proxy for OS version and hardware tier. */
+/** Codec support, a decent proxy for OS version and hardware tier. */
 export const codecProbe: Probe = {
   id: 'codecs',
   title: 'Codecs',

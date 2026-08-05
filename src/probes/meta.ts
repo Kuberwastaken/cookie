@@ -5,7 +5,7 @@ const sig = (id: string, label: string, value: unknown, extra: Partial<Signal> =
 });
 
 /**
- * Meta signals about the browsing session itself — the stuff that makes a
+ * Meta signals about the browsing session itself, the stuff that makes a
  * developer audience sit up: we can tell your DevTools are open, and roughly
  * how much free disk you have.
  */
@@ -19,7 +19,7 @@ export const metaProbe: Probe = {
     // --- Where you came from (nobody reads this, and it's right there) ---
     try {
       const ref = document.referrer || '';
-      out.push(sig('nav.referrer', 'Referrer', ref || '(none — typed in or bookmarked)'));
+      out.push(sig('nav.referrer', 'Referrer', ref || '(none, typed in or bookmarked)'));
       if (ref) {
         try { out.push(sig('nav.referrerHost', 'Came from', new URL(ref).hostname, { entropy: 2 })); }
         catch { /* malformed referrer */ }
@@ -42,7 +42,7 @@ export const metaProbe: Probe = {
       bySize = wGap > 200 || hGap > 200;
     } catch { /* ignore */ }
 
-    // 2) The console lazily serialises logged objects — a getter on a logged
+    // 2) The console lazily serialises logged objects, a getter on a logged
     // object only fires if a console panel is actually rendering it.
     let byGetter = false;
     try {

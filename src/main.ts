@@ -40,7 +40,7 @@ const TYPING_TARGET = 'the quick brown fox jumps over the lazy dog';
 async function loadEdge(signals: SignalMap): Promise<void> {
   try {
     const res = await fetch('/api/context', { headers: { accept: 'application/json' } });
-    // 404 on a static host (GitHub Pages) is fine — we fall through to the
+    // 404 on a static host (GitHub Pages) is fine, we fall through to the
     // client-side geo lookup below. Only parse when the edge function answered.
     if (res.ok) {
     const ctx = (await res.json()) as EdgeContext & Record<string, unknown>;
@@ -67,10 +67,10 @@ async function loadEdge(signals: SignalMap): Promise<void> {
     put('edge.headerOrder', 'Header order', ctx.headerOrder);
     put('edge.clientHints', 'Client hints', ctx.clientHints);
     }
-  } catch { /* dev without the function, or offline — the page still works client-side */ }
+  } catch { /* dev without the function, or offline, the page still works client-side */ }
 
   // On a static host (GitHub Pages) there's no edge function, so fall back to a
-  // public IP-geo lookup. This DOES send your IP to a third party — the one
+  // public IP-geo lookup. This DOES send your IP to a third party, the one
   // network call on the page that leaves your browser. On the Cloudflare deploy
   // the edge provides all of this for free and nothing is sent anywhere.
   if (!signals['edge.country']) await clientGeoFallback(signals);
@@ -101,7 +101,7 @@ async function clientGeoFallback(signals: SignalMap): Promise<void> {
     const netName = org && !generic.test(org.trim()) ? org : isp && !generic.test(isp.trim()) ? isp : undefined;
     put('edge.asOrg', 'Network operator', netName);
     signals['edge.__source'] = { id: 'edge.__source', label: 'Geo source', value: 'client-side IP lookup (ipwho.is)' };
-  } catch { /* offline or blocked — location act just gets skipped */ }
+  } catch { /* offline or blocked, location act just gets skipped */ }
 }
 
 async function main() {
@@ -113,7 +113,7 @@ async function main() {
   // Start watching behaviour immediately, so it accumulates through the whole visit.
   behaviorCapture.attach();
 
-  // Gather passive signals in the background while the intro types — the static
+  // Gather passive signals in the background while the intro types, the static
   // narration buys the ~1-3s the probes need before we narrate your specs.
   const signals: SignalMap = {};
   const gather = (async () => {
@@ -130,15 +130,15 @@ async function main() {
   // Acts 1–5: the dossier proper (the intro already covered act 0's hook/specs).
   for (const c of inferAll(signals).filter((c) => c.act >= 1 && c.act < 6)) await dossier.reveal(c, signals);
 
-  // Act 6: the invasive probes run automatically — no gate. The whole thesis is
+  // Act 6: the invasive probes run automatically, no gate. The whole thesis is
   // that sites do this WITHOUT asking, so we do too, and say so out loud.
-  const scan = dossier.scanning('Scanning your machine — open ports, real IP, granted permissions, paired devices');
+  const scan = dossier.scanning('Scanning your machine, open ports, real IP, granted permissions, paired devices');
   const invasive = await runProbes(INVASIVE, { consented: true, signal: controller.signal });
   Object.assign(signals, invasive);
   scan.remove();
   const invasiveClaims = inferAll(signals).filter((c) => c.act === 6);
   if (invasiveClaims.length) {
-    dossier.section('<p class="claim likely">Now the louder stuff — and notice we never asked you. Neither will anyone else.</p>');
+    dossier.section('<p class="claim likely">Now the louder stuff, and notice we never asked you. Neither will anyone else.</p>');
     for (const c of invasiveClaims) await dossier.reveal(c, signals);
   }
 
@@ -148,7 +148,7 @@ async function main() {
   // We've met before (return visit).
   for (const c of returnVisit(visit)) await dossier.reveal(c, signals);
 
-  // The interactive typing "speed test" lives down here on purpose — the whole
+  // The interactive typing "speed test" lives down here on purpose, the whole
   // passive read stays smooth, and the one interactive beat lands near the end.
   const typedBefore = visit.typed;
   const typing = await dossier.typingPrompt(TYPING_TARGET);
@@ -166,7 +166,7 @@ async function main() {
   ].sort((a, b) => a.weight - b.weight);
   for (const c of profile) await dossier.reveal(c, signals);
 
-  // The rarity funnel — how fast common attributes compound into uniqueness.
+  // The rarity funnel, how fast common attributes compound into uniqueness.
   await dossier.rarityFunnel(rarityFunnel(signals).rows);
 
   // Act 10: the receipt.
@@ -190,13 +190,13 @@ function renderFinale(dossier: Dossier, signals: SignalMap, fingerprint: string,
   const el = dossier.section(`
     <p class="verdict">Your device fingerprint, this visit:</p>
     <p class="fingerprint">${fingerprint}</p>
-    <p class="how" style="border:0;margin:0 0 2rem;padding:0">${bits.toFixed(1)} bits of entropy · assembled from ${Object.keys(signals).length} signals · zero cookies · zero permission prompts</p>
+    <p class="how" style="border:0;margin:0 0 2rem;padding:0">${bits.toFixed(1)} bits of entropy · assembled from ${Object.keys(signals).length} signals</p>
     <p><button class="go" id="raw-btn">Show me the raw data</button>
        <button class="go ghost" id="forget-btn" style="margin-left:.6rem">Forget me</button></p>
     <div id="raw-wrap" hidden><table class="raw"><tbody>${rows}</tbody></table></div>
     <p class="footnote">
       Nothing on this page was stored on a server. Everything ran in your browser, or was
-      read from the connection itself. The point isn't that this site is creepy — it's that
+      read from the connection itself. The point isn't that this site is creepy, it's that
       the site you visit <i>after</i> this one can do all of it too, and won't tell you.
       <br><br>Made as a weekend project while studying fingerprinting. <a href="https://github.com/Kuberwastaken/cookie" target="_blank" rel="noopener">It's open source too.</a>
       <br>Made with &lt;3 by <a href="https://kuber.studio" target="_blank" rel="noopener">Kuber Mehta</a> (<a href="https://x.com/kuberwastaken" target="_blank" rel="noopener">kuberwastaken</a>)
@@ -210,7 +210,7 @@ function renderFinale(dossier: Dossier, signals: SignalMap, fingerprint: string,
   el.querySelector('#forget-btn')?.addEventListener('click', async () => {
     await forget();
     const btn = el.querySelector('#forget-btn')!;
-    btn.textContent = 'Forgotten — reload to confirm';
+    btn.textContent = 'Forgotten, reload to confirm';
     (btn as HTMLButtonElement).disabled = true;
   });
 }

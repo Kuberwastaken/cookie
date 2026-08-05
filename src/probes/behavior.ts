@@ -6,7 +6,7 @@ const sig = (id: string, label: string, value: unknown, extra: Partial<Signal> =
 
 /**
  * Behaviour is passive: we don't run a fixed measurement, we start listeners and
- * let the page read the accumulator later. Pointer *type* is the fun tell —
+ * let the page read the accumulator later. Pointer *type* is the fun tell,
  * a trackpad, a mouse and a touchscreen scroll with distinguishable granularity.
  */
 class BehaviorState {

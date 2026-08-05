@@ -2,7 +2,7 @@
  * The "clear your cookies, it won't help" demonstration.
  *
  * An identifier is written to several independent storage backends. Clearing any
- * one of them — including all cookies, which we never use — leaves the others
+ * one of them, including all cookies, which we never use, leaves the others
  * intact, and the next visit re-seeds the cleared ones from a survivor. This is
  * the evercookie pattern, and it is what tracking looks like without cookies.
  *
@@ -107,7 +107,7 @@ const cacheApi = {
 
 /**
  * window.name survives navigation within a tab and is NOT cleared by "clear
- * cookies and site data" — one of the last evercookie backends still standing
+ * cookies and site data", one of the last evercookie backends still standing
  * in 2026, and almost no privacy tool covers it. We tuck the tag into a JSON
  * wrapper so we don't clobber a value another site legitimately set.
  */

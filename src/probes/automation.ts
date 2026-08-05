@@ -4,7 +4,7 @@ const sig = (id: string, label: string, value: unknown, extra: Partial<Signal> =
   id, label, value, ...extra,
 });
 
-/** A small local WebGL renderer read — the full worker/main cross-check lives
+/** A small local WebGL renderer read, the full worker/main cross-check lives
  * in gpuProbe; here we just need the string for the software-render tell. */
 function readRenderer(): string | null {
   try {
@@ -73,7 +73,7 @@ export const automationProbe: Probe = {
     const headless = normalized >= 0.3;
     const reasons = checks.filter((c) => c.hit).map((c) => c.reason);
 
-    // VM detection is a separate signal from headless — a real human can be
+    // VM detection is a separate signal from headless, a real human can be
     // on a VM (CI runner, cloud desktop) without being a bot at all.
     const vmRenderer = renderer ? /VMware|VirtualBox|Parallels|Microsoft Basic Render|llvmpipe/i.test(renderer) : false;
 

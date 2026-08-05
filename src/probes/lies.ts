@@ -20,7 +20,7 @@ function nativeCheck(label: string, fn: unknown): string | null {
 }
 
 /** Curated targets: the functions/getters most commonly patched by spoofing
- * extensions and automation stacks. Kept small on purpose — CreepJS checks
+ * extensions and automation stacks. Kept small on purpose, CreepJS checks
  * dozens; we only want the high-value tells. */
 function nativeIntegrityChecks(): Record_[] {
   const records: Record_[] = [];
@@ -37,7 +37,7 @@ function nativeIntegrityChecks(): Record_[] {
     ['Element.prototype.getBoundingClientRect', Element.prototype.getBoundingClientRect],
   ];
   for (const [name, fn] of fnTargets) {
-    if (fn === undefined) continue; // API not present on this browser at all — not a lie
+    if (fn === undefined) continue; // API not present on this browser at all, not a lie
     const reason = nativeCheck(name, fn);
     if (reason) records.push({ api: name, reason });
   }
@@ -89,7 +89,7 @@ function proxySmellChecks(): Record_[] {
   return records;
 }
 
-/** Nest a clean iframe, diff its window's own property names against ours —
+/** Nest a clean iframe, diff its window's own property names against ours,
  * survivors are almost always injected by extensions or userscripts. */
 function clientLitter(): string[] {
   try {
@@ -106,7 +106,7 @@ function clientLitter(): string[] {
     const extra = topKeys.filter((k) => {
       if (cleanKeys.has(k)) return false;
       // Frame indices (window[0], window[1]…) appear because the page has
-      // iframes and the blank baseline doesn't — not injected litter.
+      // iframes and the blank baseline doesn't, not injected litter.
       if (/^\d+$/.test(k)) return false;
       // An extension global is always a valid identifier; anything else
       // (weird keys) isn't what we're looking for.
@@ -154,7 +154,7 @@ function timerCoarsened(): boolean {
   }
 }
 
-/** Malformed statements whose exact error text differs by JS engine — a
+/** Malformed statements whose exact error text differs by JS engine, a
  * classic way to unmask a UA string claiming a browser the engine isn't. */
 function identifyEngine(): string {
   const messages: string[] = [];

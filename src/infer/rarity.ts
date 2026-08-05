@@ -4,7 +4,7 @@ import type { SignalMap } from '../types';
  * A rarity funnel: for each coarse attribute we know roughly how common it is in
  * the global browsing population, so we can show "X% of people share this" and
  * multiply down to a running "1 in N". The prevalences are deliberately rough
- * (public market-share ballparks, ~2026) and independence is a simplification —
+ * (public market-share ballparks, ~2026) and independence is a simplification,
  * this is an illustration of how fast identifiers compound, not a measurement.
  */
 

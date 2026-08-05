@@ -28,7 +28,7 @@ function osFamily(os: string): 'windows' | 'apple' | 'unix' | null {
 
 /**
  * The lie-detector claims. Catching the browser in a contradiction is the
- * "I can't hide" beat — it plays in Act 4 alongside the VPN mismatch.
+ * "I can't hide" beat, it plays in Act 4 alongside the VPN mismatch.
  */
 export const lieDetection: Inference = (s) => {
   const out: Claim[] = [];
@@ -37,16 +37,16 @@ export const lieDetection: Inference = (s) => {
   if (tampered.length >= 2) {
     out.push(claim({
       id: 'lie.tampered',
-      text: `Something on your machine is *rewriting your browser's own functions* to hide you — we can see the fingerprints of the tampering on ${tampered.length} of them.`,
+      text: `Something on your machine is *rewriting your browser's own functions* to hide you, we can see the fingerprints of the tampering on ${tampered.length} of them.`,
       confidence: 'certain', act: 4, weight: 8,
       evidence: ['lies.tamperedApis', 'lies.records'],
-      how: `Native browser functions have a fixed signature: calling toString() on them returns "[native code]". A privacy extension or anti-detect browser that fakes your fingerprint has to replace those functions — and the replacements don't match. We checked, and ${tampered.slice(0, 3).join(', ')} failed. The attempt to hide is itself a signal.`,
+      how: `Native browser functions have a fixed signature: calling toString() on them returns "[native code]". A privacy extension or anti-detect browser that fakes your fingerprint has to replace those functions, and the replacements don't match. We checked, and ${tampered.slice(0, 3).join(', ')} failed. The attempt to hide is itself a signal.`,
     }));
   }
 
   // UA-spoof detection, but ONLY when the reliable font-based OS contradicts the
-  // UA. The JS-feature-matrix guess (lies.featurePlatform) is too noisy — it
-  // misreads ordinary Chrome-on-Mac as Windows — so we don't trust it alone.
+  // UA. The JS-feature-matrix guess (lies.featurePlatform) is too noisy, it
+  // misreads ordinary Chrome-on-Mac as Windows, so we don't trust it alone.
   const uaOS = osFromUA((s['platform.ua']?.value as string) || '');
   const fontOS = s['fonts.impliedOS']?.value as string | undefined;
   const uaFam = uaOS ? osFamily(uaOS) : null;
@@ -57,14 +57,14 @@ export const lieDetection: Inference = (s) => {
       text: `Your User-Agent says *${cap(uaOS)}*, but your installed fonts are *${cap(fontOS)}*'s. One of those is lying, and it isn't the fonts.`,
       confidence: 'likely', act: 4, weight: 8,
       evidence: ['fonts.impliedOS', 'platform.ua'],
-      how: `The User-Agent string is trivial to fake, so we corroborate it. Certain fonts only ship on certain operating systems, and yours are ${cap(fontOS)}'s — not the ${cap(uaOS)} your User-Agent claims.`,
+      how: `The User-Agent string is trivial to fake, so we corroborate it. Certain fonts only ship on certain operating systems, and yours are ${cap(fontOS)}'s, not the ${cap(uaOS)} your User-Agent claims.`,
     }));
   }
 
   if (s['lies.brave']?.value === true) {
     out.push(claim({
       id: 'lie.brave',
-      text: `You're using *Brave* — you didn't tell us, but the browser gives itself away.`,
+      text: `You're using *Brave*, you didn't tell us, but the browser gives itself away.`,
       confidence: 'certain', act: 4, weight: 5,
       evidence: ['lies.brave'],
       how: `Brave ships a hidden navigator.brave API and a characteristic set of anti-fingerprinting behaviours. Ironically, the fingerprinting defenses are themselves a fingerprint.`,
@@ -75,7 +75,7 @@ export const lieDetection: Inference = (s) => {
   if (litter.length >= 3) {
     out.push(claim({
       id: 'lie.litter',
-      text: `Oh, and your extensions leave *litter* all over the page — ${litter.length} global variables a clean browser doesn't have. You might as well be carrying a bright red balloon around the internet.`,
+      text: `Oh, and your extensions leave *litter* all over the page, ${litter.length} global variables a clean browser doesn't have. You might as well be carrying a bright red balloon around the internet.`,
       confidence: 'likely', act: 4, weight: 5,
       evidence: ['lies.clientLitter'],
       how: `We compared your window object against a pristine one inside a nested iframe your extensions can't reach. The extra globals (${litter.slice(0, 3).join(', ')}…) were injected by extensions running right now.`,
@@ -85,14 +85,14 @@ export const lieDetection: Inference = (s) => {
   return out;
 };
 
-/** Bot/VM detection — mostly relevant for the HN crowd testing with automation. */
+/** Bot/VM detection, mostly relevant for the HN crowd testing with automation. */
 export const automation: Inference = (s) => {
   const out: Claim[] = [];
   if (s['bot.headless']?.value === true) {
     const reasons = (s['bot.reasons']?.value as string[] | undefined) ?? [];
     out.push(claim({
       id: 'id.bot',
-      text: `You're not a person — you're an *automated browser*. Nice try.`,
+      text: `You're not a person, you're an *automated browser*. Nice try.`,
       confidence: 'likely', act: 4, weight: 6,
       evidence: ['bot.score', 'bot.reasons'],
       how: `Headless and automated browsers leak tells: ${reasons.slice(0, 2).join('; ') || 'webdriver flags, missing chrome runtime, software rendering'}. You tripped ${reasons.length} of them.`,
@@ -114,7 +114,7 @@ export const automation: Inference = (s) => {
 function arrivalFlavor(): { direct: string; source: string } {
   let host = '';
   try { host = document.referrer ? new URL(document.referrer).hostname : ''; } catch { host = ''; }
-  if (!host) return { direct: 'And you came straight here — no link, no search. You remembered the URL by heart. That is almost sweet.', source: '' };
+  if (!host) return { direct: 'And you came straight here, no link, no search. You remembered the URL by heart. That is almost sweet.', source: '' };
   let name = host.replace(/^www\./, '');
   if (/news\.ycombinator/.test(host)) name = 'Hacker News';
   else if (/(twitter|x)\.com|t\.co/.test(host)) name = 'X';
@@ -125,21 +125,21 @@ function arrivalFlavor(): { direct: string; source: string } {
   return { direct: '', source: `And you came back from ${name} again.` };
 }
 
-/** The return-visit gotcha — the whole argument, made personal. */
+/** The return-visit gotcha, the whole argument, made personal. */
 export function returnVisit(visit: Visit): Claim[] {
   const wiped = visit.restored.length;
   const arrival = arrivalFlavor();
 
-  // First-time visitor still gets a line — foreshadowing the persistence.
+  // First-time visitor still gets a line, foreshadowing the persistence.
   if (visit.count <= 1) {
     return [claim({
       id: 'id.return',
       text: arrival.direct
-        ? `First time here, and you typed the link in yourself — bold. Either way, I'll *remember you* now. That's rather the point.`
-        : `First time here? I'll *remember you* now — no cookie required. Come back and I'll prove it.`,
+        ? `First time here, and you typed the link in yourself, bold. Either way, I'll *remember you* now. That's rather the point.`
+        : `First time here? I'll *remember you* now, no cookie required. Come back and I'll prove it.`,
       confidence: 'certain', act: 9, weight: 8,
       evidence: [],
-      how: `I just stored a random tag — not in a cookie, but across localStorage, IndexedDB, the Cache API and window.name at once. Clear your cookies, come back, and I'll still know you. That's the whole demonstration.`,
+      how: `I just stored a random tag, not in a cookie, but across localStorage, IndexedDB, the Cache API and window.name at once. Clear your cookies, come back, and I'll still know you. That's the whole demonstration.`,
     })];
   }
 
@@ -147,23 +147,23 @@ export function returnVisit(visit: Visit): Claim[] {
   const when = daysAgo === 0 ? 'earlier today' : daysAgo === 1 ? 'yesterday' : `${daysAgo} days ago`;
   const lede = visit.count >= 4
     ? `You *really* like this website, don't you? This is visit number *${visit.count}*.`
-    : `I've seen you before — you first showed up *${when}*. This is visit number *${visit.count}*.`;
+    : `I've seen you before, you first showed up *${when}*. This is visit number *${visit.count}*.`;
 
   const out: Claim[] = [claim({
     id: 'id.return',
     text: `${lede} ${arrival.direct || arrival.source}`.trim(),
     confidence: 'certain', act: 9, weight: 8,
     evidence: [],
-    how: `On your first visit I stored a random tag — not in a cookie, but across localStorage, IndexedDB, the Cache API and window.name at once. I never learned your name; I just recognised the tag, and counted.`,
+    how: `On your first visit I stored a random tag, not in a cookie, but across localStorage, IndexedDB, the Cache API and window.name at once. I never learned your name; I just recognised the tag, and counted.`,
   })];
 
   if (wiped > 0) {
     out.push(claim({
       id: 'id.evercookie',
-      text: `And you *cleared some of it* — ${wiped} of my hiding places were empty when you arrived. I restored them from the ones you missed. This is what tracking looks like without cookies.`,
+      text: `And you *cleared some of it*, ${wiped} of my hiding places were empty when you arrived. I restored them from the ones you missed. This is what tracking looks like without cookies.`,
       confidence: 'certain', act: 9, weight: 10,
       evidence: [],
-      how: `You wiped ${visit.restored.join(', ')}, but ${visit.survivors.join(', ')} still held the tag. I copied it back into the empty ones. To actually forget you, every store has to be cleared at the same instant — which is why "clear cookies" was never enough. (There's a Forget Me button below. It genuinely works.)`,
+      how: `You wiped ${visit.restored.join(', ')}, but ${visit.survivors.join(', ')} still held the tag. I copied it back into the empty ones. To actually forget you, every store has to be cleared at the same instant, which is why "clear cookies" was never enough. (There's a Forget Me button below. It genuinely works.)`,
     }));
   }
   return out;
@@ -178,7 +178,7 @@ export function verdict(s: SignalMap): { claims: Claim[]; fingerprint: string; b
 
   const claims: Claim[] = [claim({
     id: 'id.entropy',
-    text: `Putting it together: roughly *1 in ${format(oneIn)}* browsers look like yours. None of this used a cookie. None of it asked permission.`,
+    text: `Putting it together: roughly *1 in ${format(oneIn)}* browsers look like yours. None of this used a cookie.`,
     confidence: 'likely', act: 10, weight: 9,
     evidence: ['gpu.renderer', 'canvas.hash', 'fonts.hash', 'audio.hash'],
     how: `We summed the identifying information across every signal (${bits.toFixed(1)} bits of entropy) and turned it into a rarity. The exact number is an estimate; the point is that "anonymous" browsing isn't.`,

@@ -81,7 +81,7 @@ class BehaviorCapture {
       if (e.key === 'Backspace') this.backspaces++;
     }, { passive: true });
 
-    // Every time the tab loses foreground, count it — "you looked away N times."
+    // Every time the tab loses foreground, count it, "you looked away N times."
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'hidden') this.tabAways++;
     });
@@ -111,7 +111,7 @@ class BehaviorCapture {
     if (this.sawPen) return { type: 'stylus', why: 'pen pointer events', sure: true };
     if (this.pointerType === 'touch') return { type: 'touchscreen', why: 'touch pointer events', sure: true };
 
-    if (this.wheels.length < 3) return { type: this.pointerType, why: 'barely scrolled — hard to tell', sure: false };
+    if (this.wheels.length < 3) return { type: this.pointerType, why: 'barely scrolled, hard to tell', sure: false };
 
     const pixel = this.wheels.filter((w) => w.mode === 0);
     const lineMode = this.wheels.filter((w) => w.mode === 1);
@@ -123,11 +123,11 @@ class BehaviorCapture {
     const anyFractional = pixel.some((w) => !Number.isInteger(w.dy));
     const distinct = new Set(pixel.map((w) => Math.abs(Math.round(w.dy)))).size;
 
-    // macOS trackpads emit fractional pixel deltas — a dead giveaway.
+    // macOS trackpads emit fractional pixel deltas, a dead giveaway.
     if (anyFractional) return { type: 'trackpad', why: 'fractional, fine-grained scroll deltas', sure: true };
     // A mouse wheel: big deltas, very few distinct values (repeating notches).
     if (median >= 90 && distinct <= 4) return { type: 'mouse', why: 'big, repeating wheel notches', sure: true };
-    // Everything else — small and/or varied — is a trackpad.
+    // Everything else, small and/or varied, is a trackpad.
     return { type: 'trackpad', why: 'small, varied scroll deltas', sure: median < 60 || distinct > 5 };
   }
 
@@ -231,15 +231,15 @@ export function analyzeTyping(events: KeyEvent[], target: string, typed: string)
   const wpm = Math.round(cpm / 5);
 
   // Nobody types faster than ~220 wpm. Sub-20ms gaps between keys mean it wasn't
-  // typed at all — a paste, or an autofill. Call it out instead of printing junk.
+  // typed at all, a paste, or an autofill. Call it out instead of printing junk.
   if (meanFlight < 20 || wpm > 220) {
-    return [sig('key.pasted', 'Typing sample', true, { display: 'not typed — pasted or autofilled' })];
+    return [sig('key.pasted', 'Typing sample', true, { display: 'not typed, pasted or autofilled' })];
   }
   // Rhythm consistency: low variance = steady, practiced typist.
   const flightCv = stdev(flight) / (meanFlight || 1);
   const corrections = events.filter((e) => e.key === 'Backspace').length;
 
-  // A crude "typing fingerprint" — the digraph latency profile, hashed.
+  // A crude "typing fingerprint", the digraph latency profile, hashed.
   const digraphs: Record<string, number[]> = {};
   for (let i = 1; i < chars.length; i++) {
     const pair = (chars[i - 1].key + chars[i].key).toLowerCase();

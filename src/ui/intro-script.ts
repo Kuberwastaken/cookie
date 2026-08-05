@@ -36,7 +36,7 @@ function referrerLine(): string | null {
   let host = '';
   try { host = document.referrer ? new URL(document.referrer).hostname : ''; } catch { host = ''; }
   if (!host) return null;
-  if (/news\.ycombinator\.com/.test(host)) return 'You came from Hacker News. Hi. Yes — this is already the part that knows that.';
+  if (/news\.ycombinator\.com/.test(host)) return 'You came from Hacker News. Hi. Yes, this is already the part that knows that.';
   if (/reddit\.com/.test(host)) return 'You came from Reddit. Someone posted this, and here you are.';
   if (/(twitter|x)\.com|t\.co/.test(host)) return 'You came from X. Someone tweeted this at you.';
   if (/github\.com/.test(host)) return "You came from GitHub. So you're one of us.";
@@ -56,14 +56,14 @@ function specLines(s: SignalMap): string[] {
   const hz = numOf('display.refreshHz');
   const res = s['display.resolution']?.value as [number, number] | undefined;
   const dpr = numOf('display.pixelRatio') ?? 1;
-  // Physical pixels (CSS × DPR) — what people actually recognise as their
+  // Physical pixels (CSS × DPR), what people actually recognise as their
   // resolution (e.g. 1080×2400), not the logical 420×934 the browser reports.
   const phys = res ? ([Math.round(res[0] * dpr), Math.round(res[1] * dpr)] as [number, number]) : undefined;
 
   const { headline, tier } = deviceProfile(ua, gpuL, str('platform.model'), res, cores);
 
-  // A VM gets no spec brag — the fact that it's fake IS the punchline.
-  if (tier === 'vm') return [`Hold on — this isn't even real hardware. It's a *virtual machine*. We'll play along.`];
+  // A VM gets no spec brag, the fact that it's fake IS the punchline.
+  if (tier === 'vm') return [`Hold on, this isn't even real hardware. It's a *virtual machine*. We'll play along.`];
 
   const out: string[] = [`Nice machine, by the way. *${headline}*.`];
 
@@ -104,7 +104,7 @@ function deviceProfile(ua: string, gpuL: string, model: string, res: [number, nu
     const adr = gpuL.match(/adreno\D*(\d{3,4})/);
     const mali = gpuL.match(/mali-g(\d{2,3})/);
     const flagship = (adr && +adr[1] >= 700) || (mali && +mali[1] >= 70) || /immortalis/.test(gpuL);
-    if (/SM-/.test(model) || /SamsungBrowser/.test(ua)) return { headline: 'a Samsung — a person of taste', tier: flagship ? 'high' : 'mid' };
+    if (/SM-/.test(model) || /SamsungBrowser/.test(ua)) return { headline: 'a Samsung, a person of taste', tier: flagship ? 'high' : 'mid' };
     if (/Pixel/i.test(model)) return { headline: 'a Pixel', tier: flagship ? 'high' : 'mid' };
     if (flagship) return { headline: 'a flagship Android', tier: 'high' };
     return { headline: 'an Android (…okay, no judgement)', tier: 'mid' };

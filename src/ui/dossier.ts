@@ -9,7 +9,7 @@ export const ACTS: Record<number, { label: string; invasive?: boolean }> = {
   4: { label: "Things that don't add up" },
   5: { label: 'What you have installed' },
   6: { label: 'What we can reach on your machine', invasive: true },
-  7: { label: 'Who you are — not your device', invasive: true },
+  7: { label: 'Who you are, not your device', invasive: true },
   8: { label: 'What you are worth' },
   9: { label: "We've met before" },
   10: { label: 'The receipt' },
@@ -34,7 +34,7 @@ export class Dossier {
     this.root = root;
   }
 
-  /** The page opens as a bare blinking cursor — nothing has "loaded" yet. */
+  /** The page opens as a bare blinking cursor, nothing has "loaded" yet. */
   async boot(): Promise<void> {
     const el = document.createElement('p');
     el.className = 'boot';
@@ -150,7 +150,7 @@ export class Dossier {
       input.spellcheck = false;
       input.setAttribute('aria-label', 'Type the sentence above');
 
-      // Record keystroke timing from the very first key — this is the whole point.
+      // Record keystroke timing from the very first key, this is the whole point.
       const events: KeyEvent[] = [];
       const downAt = new Map<string, number>();
       input.addEventListener('keydown', (e) => {
@@ -184,13 +184,13 @@ export class Dossier {
         resolve({ events: skipped ? [] : events, value, skipped });
       };
 
-      // Never cut the user off — only enable Done once there's enough to analyse.
+      // Never cut the user off, only enable Done once there's enough to analyse.
       const MIN = 18;
       input.addEventListener('input', () => {
         const n = input.value.trim().length;
         done.disabled = n < MIN;
         if (n < MIN) { hint.textContent = 'Keep going…'; hint.className = 'type-hint'; }
-        else if (n < target.length - 2) { hint.textContent = 'Enough to read you — finish the line or hit the button.'; hint.className = 'type-hint ready'; }
+        else if (n < target.length - 2) { hint.textContent = 'Enough to read you, finish the line or hit the button.'; hint.className = 'type-hint ready'; }
         else { hint.textContent = 'Perfect. Press Enter.'; hint.className = 'type-hint ready'; }
       });
       input.addEventListener('keydown', (e) => {
@@ -201,13 +201,13 @@ export class Dossier {
 
       wrap.append(input, hint, done, skip);
       this.root.append(wrap);
-      // preventScroll: focusing must NOT yank the page down to the box — the
+      // preventScroll: focusing must NOT yank the page down to the box, the
       // user is still reading above it.
       input.focus({ preventScroll: true });
     });
   }
 
-  /** The rarity funnel — each attribute narrows you, with a running "1 in N". */
+  /** The rarity funnel, each attribute narrows you, with a running "1 in N". */
   async rarityFunnel(rows: Array<{ label: string; value: string; pct: number; cumulative: number }>): Promise<void> {
     const el = document.createElement('section');
     el.className = 'act';
@@ -241,9 +241,9 @@ export class Dossier {
       : '';
     el.innerHTML = `
       <p class="act-label">What you are worth</p>
-      <p class="claim likely" style="opacity:1;transform:none">Every ad-supported page you open auctions you to dozens of bidders in about a tenth of a second. This is the actual message that describes you — built just now, from your real data, in the real format (OpenRTB 2.6):</p>
+      <p class="claim likely" style="opacity:1;transform:none">Every ad-supported page you open auctions you to dozens of bidders in about a tenth of a second. This is the actual message that describes you, built just now, from your real data, in the real format (OpenRTB 2.6):</p>
       <pre class="raw json-receipt">${escape(json)}</pre>
-      <p class="how" style="border:0;margin:.4rem 0 1.4rem;padding:0">Everything here is real except <b>user.data.segment</b> — that's where a data broker attaches your inferred interests ("in-market for a car", "new parent", "cardholder"). We can't show yours because we're not a paying buyer. The bidders can.</p>
+      <p class="how" style="border:0;margin:.4rem 0 1.4rem;padding:0">Everything here is real except <b>user.data.segment</b>, that's where a data broker attaches your inferred interests ("in-market for a car", "new parent", "cardholder"). We can't show yours because we're not a paying buyer. The bidders can.</p>
       ${pixelHtml}
     `;
     this.root.append(el);

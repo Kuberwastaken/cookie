@@ -22,7 +22,7 @@ export const webrtcClaims: Inference = (s) => {
         : `WebRTC handed us your public IP directly: *${publicIP}*.`,
       confidence: 'likely', act: 6, weight: mismatch ? 9 : 6,
       evidence: ['webrtc.publicIP', 'edge.ip'],
-      how: `A hidden WebRTC connection asks a STUN server "what's my address?" and the browser answers — outside the page's control, and historically outside many VPNs' too. ${mismatch ? "The two IPs disagreeing is the leak." : ''}`,
+      how: `A hidden WebRTC connection asks a STUN server "what's my address?" and the browser answers, outside the page's control, and historically outside many VPNs' too. ${mismatch ? "The two IPs disagreeing is the leak." : ''}`,
     }));
   }
 
@@ -32,12 +32,12 @@ export const webrtcClaims: Inference = (s) => {
       text: `Your device's address on your own network is *${localIPs[0]}*.`,
       confidence: 'certain', act: 6, weight: 6,
       evidence: ['webrtc.localIPs'],
-      how: `WebRTC leaked your LAN IP (${localIPs.join(', ')}). That's the address your router gave your machine — normally invisible to websites, exposed here through the same mechanism video calls use.`,
+      how: `WebRTC leaked your LAN IP (${localIPs.join(', ')}). That's the address your router gave your machine, normally invisible to websites, exposed here through the same mechanism video calls use.`,
     }));
   } else if (s['webrtc.mdnsProtected']?.value === true) {
     out.push(claim({
       id: 'net.mdns',
-      text: `Your browser hid your local IP behind an mDNS alias — good. That protection is on.`,
+      text: `Your browser hid your local IP behind an mDNS alias, good. That protection is on.`,
       confidence: 'certain', act: 6, weight: 2,
       evidence: ['webrtc.mdnsProtected'],
       how: `Modern browsers replace your real LAN IP with a random *.local name in WebRTC candidates. Yours did. That's one of the few fingerprinting defenses that's on by default.`,
@@ -58,24 +58,24 @@ export const permissionClaims: Inference = (s) => {
   if (spicy.length) {
     out.push(claim({
       id: 'net.granted',
-      text: `You've already given this browser *${humanList(spicy)}* access on some site — and we can see that without asking.`,
+      text: `You've already given this browser *${humanList(spicy)}* access on some site, and we can see that without asking.`,
       confidence: 'certain', act: 6, weight: 8,
       evidence: ['perm.granted', 'perm.states'],
-      how: `navigator.permissions.query() reports whether a permission is granted, denied, or unset — and it never shows a prompt to check. Most people assume a site can't know your camera's already unlocked until it asks. It can.`,
+      how: `navigator.permissions.query() reports whether a permission is granted, denied, or unset, and it never shows a prompt to check. Most people assume a site can't know your camera's already unlocked until it asks. It can.`,
     }));
   }
 
   if (paired.length) {
     out.push(claim({
       id: 'net.paired',
-      text: `You've paired a device to this site before — we can still see it: *${paired[0]}*.`,
+      text: `You've paired a device to this site before, we can still see it: *${paired[0]}*.`,
       confidence: 'certain', act: 6, weight: 7,
       evidence: ['perm.pairedDevices'],
-      how: `Once you grant a site access to a USB, HID or serial device, it can re-list that device on every future visit with no prompt — silently, before you interact. ${paired.length > 1 ? `We found ${paired.length}.` : ''}`,
+      how: `Once you grant a site access to a USB, HID or serial device, it can re-list that device on every future visit with no prompt, silently, before you interact. ${paired.length > 1 ? `We found ${paired.length}.` : ''}`,
     }));
   }
 
-  // The "what your browser refuses vs. allows" contrast — a thoughtful beat.
+  // The "what your browser refuses vs. allows" contrast, a thoughtful beat.
   if (caps) {
     const invasive = ['idle', 'pressure'].filter((k) => caps[k]);
     if (invasive.length) {
@@ -94,17 +94,17 @@ export const permissionClaims: Inference = (s) => {
   return out;
 };
 
-/** CPU architecture from the NaN sign-bit trick — a silent "creepy fact." */
+/** CPU architecture from the NaN sign-bit trick, a silent "creepy fact." */
 export const deepClaims: Inference = (s) => {
   const out: Claim[] = [];
   const arch = s['deep.archGuess']?.value as string | undefined;
   if (arch && arch !== 'unknown') {
     out.push(claim({
       id: 'net.arch',
-      text: `Your CPU is *${arch}* — we know from a single subtraction.`,
+      text: `Your CPU is *${arch}*, we know from a single subtraction.`,
       confidence: 'likely', act: 2, weight: 4,
       evidence: ['deep.archGuess', 'deep.nanArch'],
-      how: `Compute Infinity minus Infinity and you get NaN — "not a number." But NaN has a sign bit, and which way it points differs between x86 and ARM processors. One subtraction, and your CPU family leaks. Nothing can spoof this without breaking arithmetic.`,
+      how: `Compute Infinity minus Infinity and you get NaN, "not a number." But NaN has a sign bit, and which way it points differs between x86 and ARM processors. One subtraction, and your CPU family leaks. Nothing can spoof this without breaking arithmetic.`,
     }));
   }
   if (s['deep.applePay']?.value === 'available') {
@@ -113,17 +113,17 @@ export const deepClaims: Inference = (s) => {
       text: `You have a *payment card set up in Apple Pay* on this device.`,
       confidence: 'likely', act: 5, weight: 5,
       evidence: ['deep.applePay'],
-      how: `ApplePaySession.canMakePayments() returns true only when there's an actual card provisioned. A website can check silently — no prompt — and infer you're set up to pay.`,
+      how: `ApplePaySession.canMakePayments() returns true only when there's an actual card provisioned. A website can check silently, no prompt, and infer you're set up to pay.`,
     }));
   }
   const flavor = s['deep.vendorFlavor']?.value as string | undefined;
   if (flavor && flavor !== 'standard') {
     out.push(claim({
       id: 'net.vendor',
-      text: `Your real browser is *${flavor}* — even though it shares an engine with others and the User-Agent barely says so.`,
+      text: `Your real browser is *${flavor}*, even though it shares an engine with others and the User-Agent barely says so.`,
       confidence: 'likely', act: 2, weight: 4,
       evidence: ['deep.vendorFlavor'],
-      how: `Browsers leave vendor-specific global variables lying around (Yandex, UC, Samsung Internet, Chrome-on-iOS). We checked for them. On iOS especially, every browser is really Safari underneath — but this tells them apart.`,
+      how: `Browsers leave vendor-specific global variables lying around (Yandex, UC, Samsung Internet, Chrome-on-iOS). We checked for them. On iOS especially, every browser is really Safari underneath, but this tells them apart.`,
     }));
   }
   return out;

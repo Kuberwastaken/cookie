@@ -8,7 +8,7 @@ const sig = (id: string, label: string, value: unknown, extra: Partial<Signal> =
  * deliberately closed most of the old quota/API gaps (Chrome's FileSystem
  * quota trick was patched years ago; Firefox private windows now share the
  * same storage limits as normal ones in recent versions). Treat the output
- * as a guess, never a certainty — the UI should hedge accordingly. */
+ * as a guess, never a certainty, the UI should hedge accordingly. */
 export const incognitoProbe: Probe = {
   id: 'incognito',
   title: 'Private browsing',
@@ -21,7 +21,7 @@ export const incognitoProbe: Probe = {
     // navigator.storage.estimate(): historically Chrome incognito capped quota
     // to a small fraction of disk (or of RAM) instead of the real free space.
     // As of recent Chrome this gap has mostly been closed, so this is weak
-    // evidence at best — a low absolute quota, not a reliable ratio anymore.
+    // evidence at best, a low absolute quota, not a reliable ratio anymore.
     let quota: number | null = null;
     try {
       if (navigator.storage?.estimate) {
@@ -62,7 +62,7 @@ export const incognitoProbe: Probe = {
           await sm.getDirectory();
         }
       } catch (err) {
-        // Only trust this if it's not just "unsupported" — many non-Safari
+        // Only trust this if it's not just "unsupported", many non-Safari
         // browsers don't implement getDirectory at all and would throw here
         // in a normal window too, so this stays a weak, best-effort signal.
         if (/private|denied|NotAllowed/i.test(err instanceof Error ? err.message : String(err))) {

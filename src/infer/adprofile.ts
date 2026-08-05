@@ -2,8 +2,8 @@ import type { SignalMap } from '../types';
 
 /**
  * The ad-profile "receipt." We build the actual OpenRTB 2.6 bid-request object
- * that describes this visitor — the literal JSON that gets auctioned to dozens
- * of bidders on every ad-supported page — populated from their REAL data. The
+ * that describes this visitor, the literal JSON that gets auctioned to dozens
+ * of bidders on every ad-supported page, populated from their REAL data. The
  * one honest fiction is `user.data[].segment`: we're not a data buyer, so we
  * can't show real audience segments, and we label that placeholder plainly.
  */
@@ -62,7 +62,7 @@ export function buildBidRequest(s: SignalMap): Record<string, unknown> {
         id: '<data-provider>',
         name: 'a-data-broker.example',
         segment: [
-          { id: 'PLACEHOLDER', name: 'in-market:...  (real audience segments attach here — we are not a data buyer, so we cannot show yours)' },
+          { id: 'PLACEHOLDER', name: 'in-market:...  (real audience segments attach here, we are not a data buyer, so we cannot show yours)' },
         ],
       }],
     },
@@ -78,11 +78,11 @@ export function pixelCookies(): Array<{ name: string; value: string; means: stri
     const [name, ...rest] = c.split('=');
     const value = rest.join('=');
     if (name === '_ga' || name.startsWith('_ga_')) {
-      out.push({ name, value, means: 'Google Analytics client ID — stitches your sessions together across visits.' });
+      out.push({ name, value, means: 'Google Analytics client ID, stitches your sessions together across visits.' });
     } else if (name === '_fbp') {
-      out.push({ name, value, means: 'Meta Pixel browser ID — sent to Facebook with every tracked event.' });
+      out.push({ name, value, means: 'Meta Pixel browser ID, sent to Facebook with every tracked event.' });
     } else if (name === '_fbc') {
-      out.push({ name, value, means: 'Meta click ID — links this browser to an ad you clicked.' });
+      out.push({ name, value, means: 'Meta click ID, links this browser to an ad you clicked.' });
     }
   }
   return out;

@@ -11,18 +11,18 @@ import { trackingHypocrisy, batteryState, sessionMeta } from './session';
  *  ad-profile) are called directly by main.ts because they need extra context
  *  or run at a specific point in the narrative. */
 const INFERENCES: Inference[] = [
-  // (act 0 — the referrer + device hook now live in the cinematic intro)
-  // act 1 — location
+  // (act 0, the referrer + device hook now live in the cinematic intro)
+  // act 1, location
   geolocation, coloTriangulation, localTimeBeat, handshake,
-  // act 2 — software/OS/CPU
+  // act 2, software/OS/CPU
   osFromFonts, deepClaims,
-  // act 3 — device (refresh + codec claims removed: the intro already brags them)
+  // act 3, device (refresh + codec claims removed: the intro already brags them)
   deviceModel, gpuTier, multiMonitor, peripherals, batteryState,
-  // act 4 — contradictions
+  // act 4, contradictions
   vpnContradiction, lieDetection, automation, trackingHypocrisy,
-  // act 5 — installed software
+  // act 5, installed software
   softwareFromFonts, languagePacks,
-  // act 6 — invasive (network/permissions/local/session).
+  // act 6, invasive (network/permissions/local/session).
   // installedApps is intentionally omitted: scheme-flooding app detection is too
   // unreliable in 2026 (false positives), and a wrong "you have X installed"
   // would discredit the rest. The probe still runs; we just don't claim from it.

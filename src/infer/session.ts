@@ -9,7 +9,7 @@ const num = (s: SignalMap, id: string): number | undefined => {
   return typeof v === 'number' ? v : undefined;
 };
 
-/** "You asked not to be tracked. We saw it. We ignored it." — act 4. */
+/** "You asked not to be tracked. We saw it. We ignored it.", act 4. */
 export const trackingHypocrisy: Inference = (s) => {
   const dnt = s['platform.dnt']?.value;
   const gpc = s['platform.gpc']?.value === true;
@@ -18,14 +18,14 @@ export const trackingHypocrisy: Inference = (s) => {
   const which = gpc && dnt === '1' ? 'Do Not Track and Global Privacy Control' : gpc ? 'Global Privacy Control' : 'Do Not Track';
   return [claim({
     id: 'ses.dnt',
-    text: `You've switched on *${which}* — you're actively asking sites not to track you. We saw the request. We ignored it. So does nearly everyone.`,
+    text: `You've switched on *${which}*, you're actively asking sites not to track you. We saw the request. We ignored it. So does nearly everyone.`,
     confidence: 'certain', act: 4, weight: 5,
     evidence: ['platform.dnt', 'platform.gpc'],
     how: `Your browser sends a header on every request asking not to be tracked. It's honoured by almost no one because it was never legally binding (GPC has some force under California law; DNT has essentially none). The signal arrives; the site decides whether to care. Most don't.`,
   })];
 };
 
-/** Battery state → "you're not plugged in." — act 3. */
+/** Battery state → "you're not plugged in.", act 3. */
 export const batteryState: Inference = (s) => {
   const level = num(s, 'hw.batteryLevel');
   const charging = s['hw.charging']?.value;
@@ -43,31 +43,31 @@ export const batteryState: Inference = (s) => {
 };
 
 /**
- * The one honest piece of good news — a rare "this got better" beat. Login
+ * The one honest piece of good news, a rare "this got better" beat. Login
  * detection genuinely died around 2020 (SameSite cookies), so we say so rather
  * than fake a "you're logged into X" moment that would be all false positives.
  */
 export const loginDetectionDead: Inference = () => {
   return [{
     id: 'ses.logindead',
-    text: `Ten years ago I could have listed every site you're logged into right now — Gmail, GitHub, your bank. Browsers finally *killed that trick* around 2020. It's the one thing on this page that actually got better.`,
+    text: `Ten years ago I could have listed every site you're logged into right now, Gmail, GitHub, your bank. Browsers finally *killed that trick* around 2020. It's the one thing on this page that actually got better.`,
     confidence: 'certain', act: 4, weight: 2,
     evidence: [],
-    how: `The attack loaded a login-only image from each site and watched whether it loaded. It worked because your session cookie rode along on that cross-site request. Then browsers made cookies "SameSite=Lax" by default, so they no longer do — and the endpoints that leaked got locked down. We checked in 2026: it's dead across the board. Enjoy this rare win.`,
+    how: `The attack loaded a login-only image from each site and watched whether it loaded. It worked because your session cookie rode along on that cross-site request. Then browsers made cookies "SameSite=Lax" by default, so they no longer do, and the endpoints that leaked got locked down. We checked in 2026: it's dead across the board. Enjoy this rare win.`,
   }];
 };
 
-/** DevTools open + free disk — the developer-audience "gotcha." — act 6. */
+/** DevTools open + free disk, the developer-audience "gotcha.", act 6. */
 export const sessionMeta: Inference = (s) => {
   const out: Claim[] = [];
 
   if (s['incognito.private']?.value === true) {
     out.push(claim({
       id: 'ses.incognito',
-      text: `Oh — you're in a *private / incognito window*. You thought that would change what we can see. It changed *nothing*. Cute.`,
+      text: `Oh, you're in a *private / incognito window*. You thought that would change what we can see. It changed *nothing*. Cute.`,
       confidence: 'guess', act: 6, weight: 7,
       evidence: ['incognito.private', 'incognito.method'],
-      how: `Incognito only stops your own browser from saving history and cookies to disk. It doesn't touch your IP, your GPU, your fonts, your screen, or a single thing on this page — all of which worked exactly the same. We spotted the private mode from how the storage API behaves, and carried on regardless.`,
+      how: `Incognito only stops your own browser from saving history and cookies to disk. It doesn't touch your IP, your GPU, your fonts, your screen, or a single thing on this page, all of which worked exactly the same. We spotted the private mode from how the storage API behaves, and carried on regardless.`,
     }));
   }
 
@@ -77,7 +77,7 @@ export const sessionMeta: Inference = (s) => {
       text: `Your *developer tools are open* right now. (We see you inspecting us.)`,
       confidence: 'guess', act: 6, weight: 6,
       evidence: ['meta.devtools'],
-      how: `Two tells: an open panel shrinks the page's viewport well below the window size, and the console only runs an object's getter when it's actually rendering it — we logged a tripwire object and the getter fired. Both are heuristics, so if you've got them open and we missed it, or you don't and we called it — that's the noise in this one.`,
+      how: `Two tells: an open panel shrinks the page's viewport well below the window size, and the console only runs an object's getter when it's actually rendering it, we logged a tripwire object and the getter fired. Both are heuristics, so if you've got them open and we missed it, or you don't and we called it, that's the noise in this one.`,
     }));
   }
 

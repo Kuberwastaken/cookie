@@ -20,8 +20,8 @@ export const localServices: Inference = (s) => {
 
   // Call out the juiciest finds by name first.
   const named: Record<number, { text: string; weight: number }> = {
-    11434: { text: `You're running *Ollama* — you run local AI models on this machine.`, weight: 10 },
-    1234: { text: `*LM Studio* is running — you run local language models.`, weight: 9 },
+    11434: { text: `You're running *Ollama*, you run local AI models on this machine.`, weight: 10 },
+    1234: { text: `*LM Studio* is running, you run local language models.`, weight: 9 },
     7860: { text: `You've got a *Stable Diffusion* web UI running locally.`, weight: 9 },
     2375: { text: `*Docker* is running on your machine.`, weight: 7 },
     8888: { text: `You have a *Jupyter* notebook server running.`, weight: 8 },
@@ -40,7 +40,7 @@ export const localServices: Inference = (s) => {
       text: named[p.port].text,
       confidence: 'likely', act: 6, weight: named[p.port].weight,
       evidence: ['localnet.openPorts', 'localnet.method'],
-      how: `Your browser can't read localhost responses — but it can *time* the connection. Port ${p.port} accepted a TCP connection in a way a closed port never would (${Math.round(p.ms)}ms vs the instant refusal of a dead port). That's ${p.service}, running on your computer, detected from a public website.`,
+      how: `Your browser can't read localhost responses, but it can *time* the connection. Port ${p.port} accepted a TCP connection in a way a closed port never would (${Math.round(p.ms)}ms vs the instant refusal of a dead port). That's ${p.service}, running on your computer, detected from a public website.`,
     }));
   }
 
@@ -49,7 +49,7 @@ export const localServices: Inference = (s) => {
   if (devPorts.length >= 2 && !highlights.length) {
     out.push(claim({
       id: 'net.dev',
-      text: `You're a *developer* — you have local dev servers running on ${devPorts.map((p) => p.port).join(', ')} right now.`,
+      text: `You're a *developer*, you have local dev servers running on ${devPorts.map((p) => p.port).join(', ')} right now.`,
       confidence: 'likely', act: 6, weight: 7,
       evidence: ['localnet.openPorts'],
       how: `Those are the default ports for React, Vite, Django, Flask and friends. A website just portscanned your loopback interface by timing connections, and found your work.`,
@@ -100,7 +100,7 @@ export const extensions: Inference = (s) => {
         : `You're running an *ad blocker*.`,
       confidence: 'certain', act: 6, weight: 4,
       evidence: ['ext.adblock', 'ext.adblockName'],
-      how: `We placed a decoy element with the class names ad blockers hunt for. It vanished — so something is filtering your page. ${name && name !== 'unknown' ? `The signature matches ${name}.` : ''}`,
+      how: `We placed a decoy element with the class names ad blockers hunt for. It vanished, so something is filtering your page. ${name && name !== 'unknown' ? `The signature matches ${name}.` : ''}`,
     }));
   }
 

@@ -32,13 +32,13 @@ const PROBE_WINDOW_MS = 700;
  * window. If something IS registered, the browser either hands off to the
  * OS/app-picker or simply never signals failure back to the iframe, so we
  * see neither a fast error nor a normal load before the window closes.
- * That asymmetry — fast-error vs. silence — is the whole signal.
+ * That asymmetry, fast-error vs. silence, is the whole signal.
  *
  * This never touches window.location and never opens a real external
  * handoff from the top-level document, so there's no visible "open app?"
  * prompt storm for the demo. Chrome and other browsers throttle/rate-limit
  * repeated unregistered-scheme navigations from the same page, which is why
- * this is explicitly marked unreliable (`apps.reliable = false`) — repeated
+ * this is explicitly marked unreliable (`apps.reliable = false`), repeated
  * runs, or runs after several unregistered hits, will under-report.
  */
 function probeScheme(scheme: string, outerSignal: AbortSignal): Promise<boolean> {

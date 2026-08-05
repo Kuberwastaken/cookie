@@ -82,7 +82,7 @@ export const webrtcProbe: Probe = {
       pc = new RTCPC({ iceServers: [{ urls: STUN_SERVERS }] });
 
       // A data channel isn't used for anything, it just gives ICE something
-      // to gather candidates for — without it Chrome may skip gathering
+      // to gather candidates for, without it Chrome may skip gathering
       // entirely for an otherwise empty offer.
       pc.createDataChannel('probe');
 
@@ -118,7 +118,7 @@ export const webrtcProbe: Probe = {
       const sdp = pc.localDescription?.sdp ?? '';
 
       // Merge candidates collected via the event with anything visible in the
-      // final SDP (belt and braces — some browsers only surface everything
+      // final SDP (belt and braces, some browsers only surface everything
       // in localDescription once gathering is "complete").
       const sdpCandidateLines = sdp.split('\n').filter((l) => l.startsWith('a=candidate'));
       const allCandidateStrings = [...new Set([...candidateStrings, ...sdpCandidateLines])];

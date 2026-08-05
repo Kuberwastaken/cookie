@@ -50,7 +50,7 @@ export const deviceModel: Inference = (s) => {
       confidence: 'likely',
       act: 3, weight: 8,
       evidence: ['display.resolution', 'display.pixelRatio'],
-      how: `${w}×${h} logical pixels at a ${dpr}× device pixel ratio is ${physical(w, h, dpr)} physical pixels — a resolution Apple ships on exactly one product line. No cookie, no permission: the screen just tells us.`,
+      how: `${w}×${h} logical pixels at a ${dpr}× device pixel ratio is ${physical(w, h, dpr)} physical pixels, a resolution Apple ships on exactly one product line. No cookie, no permission: the screen just tells us.`,
     }));
   }
 
@@ -85,7 +85,7 @@ export const gpuTier: Inference = (s) => {
       confidence: pretty.exact ? 'certain' : 'likely',
       act: 3, weight: 9,
       evidence: ['gpu.renderer'],
-      how: `WebGL exposes the raw GPU string through WEBGL_debug_renderer_info — here, "${truncate(raw, 90)}". Chrome hands this over with no permission prompt. It names your exact graphics hardware in the first frame.`,
+      how: `WebGL exposes the raw GPU string through WEBGL_debug_renderer_info, here, "${truncate(raw, 90)}". Chrome hands this over with no permission prompt. It names your exact graphics hardware in the first frame.`,
     }));
   }
 
@@ -93,10 +93,10 @@ export const gpuTier: Inference = (s) => {
   if (s['gpu.rendererMismatch']?.value === true) {
     out.push(claim({
       id: 'device.gpuSpoof',
-      text: `And you're *faking it* — the GPU your page reports isn't the one your browser's background threads report.`,
+      text: `And you're *faking it*, the GPU your page reports isn't the one your browser's background threads report.`,
       confidence: 'certain', act: 4, weight: 9,
       evidence: ['gpu.renderer', 'gpu.workerRenderer'],
-      how: `We read the GPU string twice: once on the page, once inside a Web Worker. A real browser returns the same value both times. Yours doesn't — which means a privacy tool or anti-detect browser is rewriting it on the main thread but forgot the Worker. The lie is the fingerprint.`,
+      how: `We read the GPU string twice: once on the page, once inside a Web Worker. A real browser returns the same value both times. Yours doesn't, which means a privacy tool or anti-detect browser is rewriting it on the main thread but forgot the Worker. The lie is the fingerprint.`,
     }));
   }
 
@@ -111,7 +111,7 @@ export const multiMonitor: Inference = (s) => {
     text: `You're running *more than one screen*.`,
     confidence: 'certain', act: 3, weight: 4,
     evidence: ['meta.multiMonitor'],
-    how: `screen.isExtended returns true when a second display is attached — no permission prompt, just a boolean any site can read. It doesn't say what's on the other screen. Yet.`,
+    how: `screen.isExtended returns true when a second display is attached, no permission prompt, just a boolean any site can read. It doesn't say what's on the other screen. Yet.`,
   })];
 };
 
@@ -123,10 +123,10 @@ export const displayInference: Inference = (s) => {
   if (hz >= 118 && hz <= 122) {
     out.push(claim({
       id: 'device.promotion',
-      text: `Your screen refreshes *120 times a second* — a ProMotion or high-refresh panel.`,
+      text: `Your screen refreshes *120 times a second*, a ProMotion or high-refresh panel.`,
       confidence: 'likely', act: 3, weight: 5,
       evidence: ['display.refreshHz'],
-      how: `We counted how often the browser could paint a frame. It settled at ${hz}Hz — you paid for the nice screen.`,
+      how: `We counted how often the browser could paint a frame. It settled at ${hz}Hz, you paid for the nice screen.`,
     }));
   } else if (hz >= 140) {
     out.push(claim({
@@ -140,7 +140,7 @@ export const displayInference: Inference = (s) => {
   return out;
 };
 
-/** Cameras/mics attached — reads as more invasive than it is (counts need no permission). */
+/** Cameras/mics attached, reads as more invasive than it is (counts need no permission). */
 export const peripherals: Inference = (s) => {
   const cams = num(s, 'hw.cameras');
   const mics = num(s, 'hw.microphones');
@@ -154,7 +154,7 @@ export const peripherals: Inference = (s) => {
     text: `You have ${parts.join(' and ')} plugged in right now.`,
     confidence: 'certain', act: 3, weight: 6,
     evidence: ['hw.cameras', 'hw.microphones', 'hw.speakers'],
-    how: `enumerateDevices() returns the count and kind of every camera, mic and speaker attached — no permission needed. Only the device *names* are gated; the tally is free.`,
+    how: `enumerateDevices() returns the count and kind of every camera, mic and speaker attached, no permission needed. Only the device *names* are gated; the tally is free.`,
   })];
 };
 
@@ -193,7 +193,7 @@ function prettifyGpu(raw: string): GpuGuess | null {
   if (mali) return { name: `ARM Mali-${mali[1]}`, article: 'an', exact: true };
   // Software renderer / VM
   if (/swiftshader|llvmpipe|basic render/i.test(raw)) {
-    return { name: 'a software renderer (no real GPU — a VM, or a headless browser)', article: '', exact: true };
+    return { name: 'a software renderer (no real GPU, a VM, or a headless browser)', article: '', exact: true };
   }
   return null;
 }

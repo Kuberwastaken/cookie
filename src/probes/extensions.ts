@@ -32,7 +32,7 @@ const RESOURCE_TIMEOUT_MS = 800;
 /**
  * A chrome-extension:// URL for a file listed in web_accessible_resources
  * loads successfully only if that extension is installed. We probe via a
- * detached <img> rather than fetch — fetch to chrome-extension:// is
+ * detached <img> rather than fetch, fetch to chrome-extension:// is
  * blocked cross-origin, but image loads resolve/reject based on whether the
  * resource exists at all, which is enough signal without reading any bytes.
  */

@@ -92,7 +92,7 @@ export const applePayProbe: Probe = {
 
     // ApplePaySession.canMakePayments() distinguishes "no API" (not Safari/not
     // Apple Pay capable) from "no card" (API present, nothing provisioned) from
-    // "available" (a real card is set up in Wallet) — a strong device signal.
+    // "available" (a real card is set up in Wallet), a strong device signal.
     try {
       const w = window as unknown as { ApplePaySession?: { canMakePayments: () => boolean } };
       if (!w.ApplePaySession) {

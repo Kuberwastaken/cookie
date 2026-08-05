@@ -8,7 +8,7 @@ const sig = (id: string, label: string, value: unknown, extra: Partial<Signal> =
 /**
  * Candidate font list: ~120 real font names spanning Windows, macOS, Linux
  * system fonts and software-specific fonts (LaTeX, Office, Adobe, dev tools,
- * CJK language packs). Detection is a signal, not a guarantee — a font may be
+ * CJK language packs). Detection is a signal, not a guarantee, a font may be
  * absent from the OS it "belongs" to (portable installs, custom images), so
  * inference below is expressed as buckets/confidence, never certainty.
  */
@@ -74,7 +74,7 @@ const SENTINEL = 'ZZName_NoSuchFontEver_9137xQ';
 
 /**
  * Measure-based detection only. We deliberately do NOT use document.fonts.check()
- * — it returns true for unavailable fonts in several browsers and in headless
+ *, it returns true for unavailable fonts in several browsers and in headless
  * Chrome, which would make every software inference a false positive.
  *
  * Returns null if the sentinel tripped (detection is unreliable in this env).
@@ -184,7 +184,7 @@ function inferSoftware(detected: Set<string>): SoftwareMatch[] {
   return out;
 }
 
-/** Rasterisation and system-font enumeration — an old trick, still brutally effective. */
+/** Rasterisation and system-font enumeration, an old trick, still brutally effective. */
 export const fontProbe: Probe = {
   id: 'fonts',
   title: 'Fonts',
@@ -192,7 +192,7 @@ export const fontProbe: Probe = {
   async run() {
     const detected = detectFonts(CANDIDATES);
     if (detected === null) {
-      // Sentinel tripped or no canvas — refuse to guess rather than emit noise.
+      // Sentinel tripped or no canvas, refuse to guess rather than emit noise.
       return [
         sig('fonts.count', 'Font count', 0),
         sig('fonts.software', 'Implied installed software', [], { display: '', entropy: 0 }),
@@ -218,7 +218,7 @@ export const fontProbe: Probe = {
     if (buckets[0].hits.length > 0 && buckets[0].hits.length > (buckets[1]?.hits.length ?? 0)) {
       impliedOS = buckets[0].os;
     } else if (buckets[0].hits.length > 0) {
-      // tie among top buckets — leave undetermined rather than guessing
+      // tie among top buckets, leave undetermined rather than guessing
       impliedOS = 'unknown';
     }
 

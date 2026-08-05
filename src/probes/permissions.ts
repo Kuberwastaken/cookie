@@ -6,7 +6,7 @@ const sig = (id: string, label: string, value: unknown, extra: Partial<Signal> =
 
 /**
  * Permission-state probing. navigator.permissions.query() returns
- * 'granted' | 'denied' | 'prompt' WITHOUT ever showing a prompt — so a site can
+ * 'granted' | 'denied' | 'prompt' WITHOUT ever showing a prompt, so a site can
  * silently learn that you've already granted camera, mic, or location access
  * (to this origin) before you touch anything. Most people assume a site can't
  * know that until it asks. It can.
@@ -21,7 +21,7 @@ const PERMISSIONS = [
 
 /**
  * Capability matrix: the mere PRESENCE of these powerful APIs fingerprints the
- * browser/platform, and — via each API's get*() — lets a site re-list devices
+ * browser/platform, and, via each API's get*(), lets a site re-list devices
  * you've ALREADY paired to it, silently, with no fresh prompt.
  */
 const CAPABILITIES: Array<{ id: string; label: string; test: () => boolean }> = [
@@ -59,7 +59,7 @@ export const permissionProbe: Probe = {
         try {
           const status = await perms.query({ name: name as PermissionName });
           states[name] = status.state;
-        } catch { /* unsupported name on this browser — skip silently */ }
+        } catch { /* unsupported name on this browser, skip silently */ }
       }));
       const granted = Object.entries(states).filter(([, s]) => s === 'granted').map(([n]) => n);
       const denied = Object.entries(states).filter(([, s]) => s === 'denied').map(([n]) => n);
@@ -81,7 +81,7 @@ export const permissionProbe: Probe = {
       display: Object.entries(caps).filter(([, v]) => v).map(([k]) => k).join(', '), entropy: 2,
     }));
 
-    // Silent re-enumeration of devices already paired to THIS origin — no prompt.
+    // Silent re-enumeration of devices already paired to THIS origin, no prompt.
     const pairedDevices: string[] = [];
     try {
       const hid = (navigator as Navigator & { hid?: { getDevices(): Promise<Array<{ productName?: string }>> } }).hid;

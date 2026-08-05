@@ -1,10 +1,10 @@
 /**
- * The intro types inline into the page and STACKS — nothing disappears. Each
+ * The intro types inline into the page and STACKS, nothing disappears. Each
  * line is a normal serif paragraph with blue *emphasis*, typed character by
  * character, the page scrolling to follow. When the intro finishes it simply
  * flows into the dossier below in the same theme; there's no seam.
  *
- * A segment is either a literal line or a function resolving to more lines — the
+ * A segment is either a literal line or a function resolving to more lines, the
  * latter lets static narration type while the probes finish, then splices in
  * your real specs.
  */

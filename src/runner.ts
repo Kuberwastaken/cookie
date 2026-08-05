@@ -69,7 +69,7 @@ export function totalEntropy(signals: SignalMap): number {
   return sum <= 20 ? sum : 20 + Math.log2(sum - 19);
 }
 
-/** FNV-1a — small, fast, dependency-free, good enough for a display fingerprint. */
+/** FNV-1a, small, fast, dependency-free, good enough for a display fingerprint. */
 export function hash(input: string): string {
   let h = 0x811c9dc5;
   for (let i = 0; i < input.length; i++) {

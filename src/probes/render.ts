@@ -9,7 +9,7 @@ type GLish = WebGLRenderingContext | WebGL2RenderingContext;
 
 /** Read the WebGL renderer string inside a fresh Worker, via a blob URL so no
  * separate script file is needed. Most spoofing extensions patch the main
- * thread's WebGL prototype and forget the Worker has its own — comparing the
+ * thread's WebGL prototype and forget the Worker has its own, comparing the
  * two is CreepJS's strongest anti-spoof check. */
 function readRendererInWorker(): Promise<string | null> {
   return new Promise((resolve) => {
@@ -96,7 +96,7 @@ export const gpuProbe: Probe = {
       out.push(sig('gpu.rendererMismatch', 'Renderer mismatch (main vs worker)', workerRenderer !== renderer));
     }
 
-    // WebGPU is a second, independently-implemented path to the same vendor info —
+    // WebGPU is a second, independently-implemented path to the same vendor info,
     // no ambient lib.webgpu types are configured, so this stays loosely typed.
     const gpuNav = navigator as Navigator & { gpu?: { requestAdapter: (...a: unknown[]) => Promise<unknown> } };
     if (gpuNav.gpu) {
@@ -187,7 +187,7 @@ export const canvasProbe: Probe = {
   },
 };
 
-/** OfflineAudioContext oscillator → compressor fingerprint — the analogue-modelled
+/** OfflineAudioContext oscillator → compressor fingerprint, the analogue-modelled
  * DSP path differs subtly by OS audio stack, well below audible thresholds. */
 export const audioProbe: Probe = {
   id: 'audio',
@@ -242,7 +242,7 @@ export const audioProbe: Probe = {
 };
 
 /** Sub-pixel layout geometry: getBoundingClientRect on transformed elements and
- * a Range, hashed together — font metrics and rasteriser rounding leak here. */
+ * a Range, hashed together, font metrics and rasteriser rounding leak here. */
 export const domRectProbe: Probe = {
   id: 'domrect',
   title: 'DOM geometry',

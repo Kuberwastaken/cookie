@@ -46,7 +46,7 @@ const FAST_REJECT_MS = 150;
 /**
  * Time a single no-cors fetch attempt. We never read the response body (the
  * browser wouldn't let us for a cross-origin localhost target anyway, and
- * Local Network Access prompts/blocks would fire first) — we only care how
+ * Local Network Access prompts/blocks would fire first), we only care how
  * long the browser took to give up on, or open, the TCP connection.
  */
 async function timeFetch(url: string, outerSignal: AbortSignal): Promise<{ ms: number; ok: boolean; timedOut: boolean }> {
@@ -98,7 +98,7 @@ async function mapWithConcurrency<T, R>(
  * is essentially guaranteed to be closed, then flag candidates whose timing
  * is a significant multiple of that baseline as "open". This is heuristic
  * and will produce false positives (slow closed ports, firewalled-but-open
- * ports) and false negatives (services that bind but drop silently) — it is
+ * ports) and false negatives (services that bind but drop silently), it is
  * a demonstration of the class of attack, not a precise scanner.
  */
 export const localNetProbe: Probe = {

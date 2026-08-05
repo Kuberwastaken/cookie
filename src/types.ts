@@ -38,7 +38,7 @@ export interface Probe {
   /**
    * Tier 0 runs immediately on load (passive, zero permission, zero side effect).
    * Tier 1 runs immediately but is slower (canvas/audio/font rasterisation).
-   * Tier 2 is INVASIVE — port scans, protocol probes, extension enumeration.
+   * Tier 2 is INVASIVE, port scans, protocol probes, extension enumeration.
    * Tier 2 never runs without `consented`.
    */
   tier: 0 | 1 | 2;
@@ -56,7 +56,7 @@ export interface Claim {
   /** the line itself, e.g. "You're on a 14-inch MacBook Pro." */
   text: string;
   confidence: Confidence;
-  /** narrative act, 1..8 — controls reveal order */
+  /** narrative act, 1..8, controls reveal order */
   act: number;
   /** shock ranking within the act; higher lands later and harder */
   weight: number;
