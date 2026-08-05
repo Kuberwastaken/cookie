@@ -56,16 +56,9 @@ export const sessionMeta: Inference = (s) => {
     }));
   }
 
-  const quota = num(s, 'meta.storageQuota');
-  if (quota && quota > 1e9) {
-    out.push(claim({
-      id: 'ses.disk',
-      text: `We can estimate you have roughly *${(quota / 1e9).toFixed(0)} GB* of storage free.`,
-      confidence: 'guess', act: 6, weight: 3,
-      evidence: ['meta.storageQuota'],
-      how: `navigator.storage.estimate() reports how much a site is allowed to store, which the browser scales to your actual free disk space. It's a coarse read, but it narrows your device down further than most people expect.`,
-    }));
-  }
+  // Note: we deliberately do NOT claim "free disk space" here. storage.estimate()
+  // returns a quota the browser scales and heavily buckets, so it's a poor proxy
+  // for real free space (often off by tens of GB). We keep it only as raw signal.
 
   return out;
 };

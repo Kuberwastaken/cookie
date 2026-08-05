@@ -16,7 +16,7 @@ const sig = (id: string, label: string, value: unknown, extra: Partial<Signal> =
 
 interface WheelSample { dy: number; mode: number; }
 interface MoveSample { x: number; y: number; t: number; }
-interface KeyEvent { key: string; down: number; up: number; }
+export interface KeyEvent { key: string; down: number; up: number; }
 
 class BehaviorCapture {
   private started = performance.now();
@@ -202,7 +202,7 @@ class BehaviorCapture {
   }
 }
 
-function analyzeTyping(events: KeyEvent[], target: string, typed: string): Signal[] {
+export function analyzeTyping(events: KeyEvent[], target: string, typed: string): Signal[] {
   const chars = events.filter((e) => e.key.length === 1);
   if (chars.length < 8) {
     return [sig('key.tooShort', 'Typing sample', true, { error: 'not enough keystrokes' })];
@@ -217,6 +217,12 @@ function analyzeTyping(events: KeyEvent[], target: string, typed: string): Signa
   const totalMs = chars[chars.length - 1].up - chars[0].down;
   const cpm = totalMs > 0 ? Math.round((chars.length / totalMs) * 60000) : 0;
   const wpm = Math.round(cpm / 5);
+
+  // Nobody types faster than ~220 wpm. Sub-20ms gaps between keys mean it wasn't
+  // typed at all — a paste, or an autofill. Call it out instead of printing junk.
+  if (meanFlight < 20 || wpm > 220) {
+    return [sig('key.pasted', 'Typing sample', true, { display: 'not typed — pasted or autofilled' })];
+  }
   // Rhythm consistency: low variance = steady, practiced typist.
   const flightCv = stdev(flight) / (meanFlight || 1);
   const corrections = events.filter((e) => e.key === 'Backspace').length;

@@ -265,6 +265,53 @@ button.go.ghost:hover { color: var(--ink); border-color: var(--dim); }
   line-height: 1.55;
 }
 
+/* ---------- rarity funnel ---------- */
+
+.funnel { margin-top: 1.5rem; }
+
+.funnel-row {
+  margin-bottom: 1.25rem;
+  animation: rise 0.5s cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
+}
+
+.funnel-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  margin-bottom: 0.4rem;
+}
+.funnel-label { color: var(--faint); text-transform: uppercase; letter-spacing: 0.12em; font-size: 0.66rem; }
+.funnel-val { color: var(--ink); }
+
+.funnel-bar {
+  height: 5px;
+  background: var(--rule);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.funnel-bar span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #6a4a3f, var(--alarm));
+  border-radius: 3px;
+}
+
+.funnel-meta {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--dim);
+  margin-top: 0.35rem;
+}
+.funnel-cum { color: var(--alarm); }
+
+@media (prefers-reduced-motion: reduce) {
+  .funnel-row { animation: none; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .claim { animation: none; opacity: 1; transform: none; }
   .caret { animation: none; }

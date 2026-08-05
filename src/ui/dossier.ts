@@ -1,4 +1,5 @@
 import type { Claim, SignalMap } from '../types';
+import type { KeyEvent } from '../probes/interactive';
 
 export const ACTS: Record<number, { label: string; invasive?: boolean }> = {
   1: { label: 'Where you are' },
@@ -130,7 +131,7 @@ export class Dossier {
    * with the input element (whose keystrokes a probe has been recording) once
    * the user has typed enough, or immediately if they skip.
    */
-  typingPrompt(target: string): Promise<{ input: HTMLInputElement | null; skipped: boolean }> {
+  typingPrompt(target: string): Promise<{ events: KeyEvent[]; value: string; skipped: boolean }> {
     return new Promise((resolve) => {
       const wrap = document.createElement('section');
       wrap.className = 'act invasive';
@@ -146,6 +147,17 @@ export class Dossier {
       input.autocapitalize = 'off';
       input.spellcheck = false;
       input.setAttribute('aria-label', 'Type the sentence above');
+
+      // Record keystroke timing from the very first key — this is the whole point.
+      const events: KeyEvent[] = [];
+      const downAt = new Map<string, number>();
+      input.addEventListener('keydown', (e) => {
+        if (!downAt.has(e.key)) downAt.set(e.key, performance.now());
+      });
+      input.addEventListener('keyup', (e) => {
+        const d = downAt.get(e.key);
+        if (d != null) { events.push({ key: e.key, down: d, up: performance.now() }); downAt.delete(e.key); }
+      });
 
       const hint = document.createElement('p');
       hint.className = 'type-hint';
@@ -165,8 +177,9 @@ export class Dossier {
       let settled = false;
       const finish = (skipped: boolean) => {
         if (settled) return; settled = true;
+        const value = input.value;
         input.disabled = true; done.remove(); skip.remove();
-        resolve({ input: skipped ? null : input, skipped });
+        resolve({ events: skipped ? [] : events, value, skipped });
       };
 
       // Never cut the user off — only enable Done once there's enough to analyse.
@@ -188,6 +201,29 @@ export class Dossier {
       this.root.append(wrap);
       input.focus();
     });
+  }
+
+  /** The rarity funnel — each attribute narrows you, with a running "1 in N". */
+  async rarityFunnel(rows: Array<{ label: string; value: string; pct: number; cumulative: number }>): Promise<void> {
+    const el = document.createElement('section');
+    el.className = 'act';
+    el.innerHTML = `<p class="act-label">How rare that makes you</p>
+      <p class="claim likely" style="opacity:1;transform:none">Each thing on its own is common. Watch how fast they multiply.</p>
+      <div class="funnel"></div>`;
+    this.root.append(el);
+    const host = el.querySelector('.funnel')!;
+    const reduce = reduceMotion();
+    for (const r of rows) {
+      await sleep(reduce ? 0 : 320);
+      const line = document.createElement('div');
+      line.className = 'funnel-row';
+      const pct = r.pct >= 0.01 ? `${Math.round(r.pct * 100)}%` : `${(r.pct * 100).toFixed(1)}%`;
+      line.innerHTML = `
+        <div class="funnel-head"><span class="funnel-label">${escape(r.label)}</span><span class="funnel-val">${escape(r.value)}</span></div>
+        <div class="funnel-bar"><span style="width:${Math.max(2, Math.min(100, r.pct * 100))}%"></span></div>
+        <div class="funnel-meta"><span>${pct} of people</span><span class="funnel-cum">1 in ${r.cumulative.toLocaleString()}</span></div>`;
+      host.append(line);
+    }
   }
 
   /** Render the OpenRTB receipt: a syntax-lit JSON block with a caption. */

@@ -2,7 +2,7 @@ import type { Claim, Inference, SignalMap } from '../types';
 import { deviceModel, gpuTier, displayInference, peripherals } from './device';
 import { geolocation, vpnContradiction, handshake } from './location';
 import { softwareFromFonts, osFromFonts, languagePacks, codecInference } from './software';
-import { localServices, installedApps, extensions } from './invasive';
+import { localServices, extensions } from './invasive';
 import { lieDetection, automation } from './identity';
 import { webrtcClaims, permissionClaims, deepClaims } from './network';
 import { trackingHypocrisy, batteryState, sessionMeta } from './session';
@@ -21,8 +21,11 @@ const INFERENCES: Inference[] = [
   vpnContradiction, lieDetection, automation, trackingHypocrisy,
   // act 5 — installed software
   softwareFromFonts, languagePacks,
-  // act 6 — invasive (network/permissions/local/session)
-  localServices, installedApps, extensions, webrtcClaims, permissionClaims, sessionMeta,
+  // act 6 — invasive (network/permissions/local/session).
+  // installedApps is intentionally omitted: scheme-flooding app detection is too
+  // unreliable in 2026 (false positives), and a wrong "you have X installed"
+  // would discredit the rest. The probe still runs; we just don't claim from it.
+  localServices, extensions, webrtcClaims, permissionClaims, sessionMeta,
 ];
 
 /** Run every inference and return claims sorted into reveal order. */
@@ -42,3 +45,4 @@ export function sortClaims(claims: Claim[]): Claim[] {
 export { returnVisit, verdict } from './identity';
 export { behavioralClaims, typingClaims, personalityTheatre } from './profile';
 export { buildBidRequest, pixelCookies } from './adprofile';
+export { rarityFunnel } from './rarity';

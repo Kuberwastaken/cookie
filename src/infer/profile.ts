@@ -104,6 +104,16 @@ export function behavioralClaims(s: SignalMap): Claim[] {
 
 /** Claims from the interactive "type this sentence" step. */
 export function typingClaims(s: SignalMap): Claim[] {
+  // Caught a paste / autofill instead of real typing.
+  if (s['key.pasted']?.value === true) {
+    return [claim({
+      id: 'pf.pasted',
+      text: `You *pasted* that — or your browser autofilled it. We were timing the keystrokes, and there weren't any.`,
+      confidence: 'certain', act: 7, weight: 5,
+      evidence: ['key.pasted'],
+      how: `Real typing has 80–200ms gaps between keys. Yours arrived faster than any human hand moves — so it wasn't typed. Sites watch keystroke timing exactly like this to tell people from scripts.`,
+    })];
+  }
   const wpm = num(s, 'key.wpm');
   if (!wpm) return [];
   const out: Claim[] = [];

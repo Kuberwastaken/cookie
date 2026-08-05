@@ -5,7 +5,7 @@ import { recall, forget, type Visit } from './persist';
 import {
   inferAll, returnVisit, verdict,
   behavioralClaims, typingClaims, personalityTheatre,
-  buildBidRequest, pixelCookies,
+  buildBidRequest, pixelCookies, rarityFunnel,
 } from './infer';
 
 // probes
@@ -17,7 +17,7 @@ import { automationProbe } from './probes/automation';
 import { incognitoProbe } from './probes/incognito';
 import { cpuArchProbe, mathProbe, applePayProbe, mathmlProbe } from './probes/deep';
 import { metaProbe } from './probes/meta';
-import { behaviorCapture } from './probes/interactive';
+import { behaviorCapture, analyzeTyping } from './probes/interactive';
 import { localNetProbe } from './probes/localnet';
 import { appsProbe } from './probes/apps';
 import { extProbe } from './probes/extensions';
@@ -89,31 +89,23 @@ async function main() {
   // even when their underlying signal was gathered passively.
   for (const c of inferAll(signals).filter((c) => c.act < 6)) await dossier.reveal(c, signals);
 
-  // Act 6: the invasive gate.
-  const consent = await dossier.gate(
-    "Everything so far was passive — no permission, no click, nothing stored. There's a louder set: scanning your own machine, leaking your IP from behind a VPN, reading which permissions and devices you've already granted. Want to see those?",
-    'Show me the invasive ones',
-  );
-
-  if (consent) {
-    const scan = dossier.scanning('Scanning your machine — open ports, real IP, granted permissions, paired devices');
-    const invasive = await runProbes(INVASIVE, { consented: true, signal: controller.signal });
-    Object.assign(signals, invasive);
-    scan.remove();
-    const invasiveClaims = inferAll(signals).filter((c) => c.act === 6);
-    if (invasiveClaims.length) {
-      for (const c of invasiveClaims) await dossier.reveal(c, signals);
-    } else {
-      dossier.section('<p class="act-label">What we can reach on your machine</p><p class="claim likely" style="opacity:1;transform:none">Nothing detectable this time — your browser blocked the probes, or there was nothing listening. That\'s the good outcome.</p>');
-    }
+  // Act 6: the invasive probes run automatically — no gate. The whole thesis is
+  // that sites do this WITHOUT asking, so we do too, and say so out loud.
+  const scan = dossier.scanning('Scanning your machine — open ports, real IP, granted permissions, paired devices');
+  const invasive = await runProbes(INVASIVE, { consented: true, signal: controller.signal });
+  Object.assign(signals, invasive);
+  scan.remove();
+  const invasiveClaims = inferAll(signals).filter((c) => c.act === 6);
+  if (invasiveClaims.length) {
+    dossier.section('<p class="claim likely" style="opacity:1;transform:none;color:#fff">Now the louder stuff — and notice we never asked you. Neither will anyone else.</p>');
+    for (const c of invasiveClaims) await dossier.reveal(c, signals);
   }
 
-  // Act 7: who you are (behavioural). Interactive typing, then the profile.
-  const { input } = await dossier.typingPrompt(TYPING_TARGET);
-  const stop = input ? behaviorCapture.captureTyping(input, TYPING_TARGET) : null;
-  // Give the sampler a moment to flush the last keyups.
-  await new Promise((r) => setTimeout(r, stop ? 400 : 0));
-  if (stop) Object.assign(signals, keyed(stop()));
+  // Act 7: who you are (behavioural). Typing is recorded from the first key.
+  const typing = await dossier.typingPrompt(TYPING_TARGET);
+  if (!typing.skipped && typing.events.length) {
+    Object.assign(signals, keyed(analyzeTyping(typing.events, TYPING_TARGET, typing.value)));
+  }
   Object.assign(signals, keyed(behaviorCapture.snapshot()));
 
   const profile = [
@@ -128,6 +120,9 @@ async function main() {
 
   // Act 9: return visit.
   for (const c of returnVisit(visit)) await dossier.reveal(c, signals);
+
+  // The rarity funnel — how fast common attributes compound into uniqueness.
+  await dossier.rarityFunnel(rarityFunnel(signals).rows);
 
   // Act 10: the receipt.
   const { claims: vClaims, fingerprint, bits } = verdict(signals);

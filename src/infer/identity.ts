@@ -6,6 +6,26 @@ const claim = (c: Omit<Claim, 'confidence'> & Partial<Pick<Claim, 'confidence'>>
   confidence: 'likely', ...c,
 });
 
+/** Map a User-Agent string to the OS family it claims, matching fonts.impliedOS. */
+function osFromUA(ua: string): 'windows' | 'macos' | 'linux' | 'android' | 'ios' | null {
+  if (/Windows/.test(ua)) return 'windows';
+  if (/Android/.test(ua)) return 'android';
+  if (/iPhone|iPad|iPod/.test(ua)) return 'ios';
+  if (/Macintosh|Mac OS X/.test(ua)) return 'macos';
+  if (/Linux|X11/.test(ua)) return 'linux';
+  return null;
+}
+
+const cap = (s: string): string => (s === 'macos' ? 'macOS' : s === 'ios' ? 'iOS' : s.charAt(0).toUpperCase() + s.slice(1));
+
+/** Collapse to a family so Apple(iOS/macOS) and Unix(Linux/Android) don't false-flag. */
+function osFamily(os: string): 'windows' | 'apple' | 'unix' | null {
+  if (os === 'windows') return 'windows';
+  if (os === 'macos' || os === 'ios') return 'apple';
+  if (os === 'linux' || os === 'android') return 'unix';
+  return null;
+}
+
 /**
  * The lie-detector claims. Catching the browser in a contradiction is the
  * "I can't hide" beat — it plays in Act 4 alongside the VPN mismatch.
@@ -24,14 +44,20 @@ export const lieDetection: Inference = (s) => {
     }));
   }
 
-  if (s['lies.uaPlatformMismatch']?.value === true) {
-    const feat = s['lies.featurePlatform']?.value as string | undefined;
+  // UA-spoof detection, but ONLY when the reliable font-based OS contradicts the
+  // UA. The JS-feature-matrix guess (lies.featurePlatform) is too noisy — it
+  // misreads ordinary Chrome-on-Mac as Windows — so we don't trust it alone.
+  const uaOS = osFromUA((s['platform.ua']?.value as string) || '');
+  const fontOS = s['fonts.impliedOS']?.value as string | undefined;
+  const uaFam = uaOS ? osFamily(uaOS) : null;
+  const fontFam = fontOS ? osFamily(fontOS) : null;
+  if (uaOS && fontOS && fontOS !== 'unknown' && uaFam && fontFam && uaFam !== fontFam) {
     out.push(claim({
       id: 'lie.platform',
-      text: `Your browser claims one operating system, but the way it actually behaves says *${feat ?? 'another'}*. You're spoofing your User-Agent — and it doesn't work.`,
+      text: `Your User-Agent says *${cap(uaOS)}*, but your installed fonts are *${cap(fontOS)}*'s. One of those is lying, and it isn't the fonts.`,
       confidence: 'likely', act: 4, weight: 8,
-      evidence: ['lies.featurePlatform', 'platform.ua'],
-      how: `The User-Agent string is trivial to fake, so we ignore it. Instead we check which browser features actually exist — the set differs per OS. Yours matches ${feat}, not what your User-Agent says.`,
+      evidence: ['fonts.impliedOS', 'platform.ua'],
+      how: `The User-Agent string is trivial to fake, so we corroborate it. Certain fonts only ship on certain operating systems, and yours are ${cap(fontOS)}'s — not the ${cap(uaOS)} your User-Agent claims.`,
     }));
   }
 

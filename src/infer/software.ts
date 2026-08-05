@@ -51,23 +51,43 @@ export const osFromFonts: Inference = (s) => {
   return [];
 };
 
-/** Speech-synthesis voices leak installed language packs → languages you use. */
+/**
+ * Speech-synthesis voices. We do NOT infer "languages you read" from these —
+ * Windows and macOS ship dozens of language voices by default, so that's noise.
+ * The honest signal is (a) the exact voice list as a fingerprint, and (b) the
+ * languages the user actually *configured* in their browser, which is a real
+ * preference, not a shipped default.
+ */
 export const languagePacks: Inference = (s) => {
-  const langs = s['voices.langs']?.value as string[] | undefined;
   const count = s['voices.count']?.value as number | undefined;
-  if (!langs?.length) return [];
-
-  const human = [...new Set(langs.map((l) => languageName(l.split('-')[0])))].filter(Boolean);
-  const extra = human.filter((l) => l && l !== 'English');
+  const prefs = s['platform.languages']?.value as string[] | undefined;
   const out: Claim[] = [];
 
-  if (extra.length) {
+  // Real signal: extra configured languages beyond the primary one.
+  if (prefs && prefs.length > 1) {
+    const names = [...new Set(prefs.map((l) => languageName(l.split('-')[0])).filter(Boolean))];
+    const nonEnglish = names.filter((n) => n !== 'English');
+    if (names.length > 1) {
+      out.push(claim({
+        id: 'sw.langprefs',
+        text: nonEnglish.length
+          ? `You've set your browser to prefer ${list(names)} — so you likely read ${list(nonEnglish)}.`
+          : `You've configured multiple language preferences: ${list(names)}.`,
+        confidence: 'likely', act: 5, weight: 4,
+        evidence: ['platform.languages'],
+        how: `Your browser sends an ordered list of languages you prefer (navigator.languages) on every request — you configured this, it isn't a default. Sites use it to guess where you're from and what you read.`,
+      }));
+    }
+  }
+
+  // Fingerprint signal: the voice list itself, not the languages.
+  if (count && count > 0) {
     out.push(claim({
-      id: 'sw.langpacks',
-      text: `Your machine has voices installed for ${list(extra)}. You probably ${extra.length > 1 ? 'read those languages' : 'read ' + extra[0]}.`,
-      confidence: 'guess', act: 5, weight: 5,
-      evidence: ['voices.langs', 'voices.count'],
-      how: `speechSynthesis.getVoices() lists every text-to-speech voice on your system — ${count} of them here. The language packs you've installed hint at the languages you actually use.`,
+      id: 'sw.voices',
+      text: `Your system has *${count} text-to-speech voices* installed — the exact set is a strong fingerprint.`,
+      confidence: 'likely', act: 5, weight: 2,
+      evidence: ['voices.count', 'voices.hash'],
+      how: `speechSynthesis.getVoices() returns every installed voice. The list varies by OS, OS version, and any voices you've downloaded — enough variation to help pin your exact setup, no permission needed.`,
     }));
   }
   return out;
