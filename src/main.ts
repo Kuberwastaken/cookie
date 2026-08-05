@@ -62,6 +62,35 @@ async function loadEdge(signals: SignalMap): Promise<void> {
     put('edge.headerOrder', 'Header order', ctx.headerOrder);
     put('edge.clientHints', 'Client hints', ctx.clientHints);
   } catch { /* dev without the function, or offline — the page still works client-side */ }
+
+  // On a static host (GitHub Pages) there's no edge function, so fall back to a
+  // public IP-geo lookup. This DOES send your IP to a third party — the one
+  // network call on the page that leaves your browser. On the Cloudflare deploy
+  // the edge provides all of this for free and nothing is sent anywhere.
+  if (!signals['edge.country']) await clientGeoFallback(signals);
+}
+
+async function clientGeoFallback(signals: SignalMap): Promise<void> {
+  try {
+    const res = await fetch('https://ipwho.is/');
+    if (!res.ok) return;
+    const d = (await res.json()) as Record<string, any>;
+    if (d.success === false) return;
+    const put = (id: string, label: string, value: unknown) => {
+      if (value != null && value !== '') signals[id] = { id, label, value };
+    };
+    put('edge.ip', 'IP address', d.ip);
+    put('edge.city', 'City (from IP)', d.city);
+    put('edge.region', 'Region (from IP)', d.region);
+    put('edge.country', 'Country (from IP)', d.country_code);
+    put('edge.postalCode', 'Postal code (from IP)', d.postal);
+    put('edge.latitude', 'Latitude', d.latitude);
+    put('edge.longitude', 'Longitude', d.longitude);
+    put('edge.timezone', 'Timezone (from IP)', d.timezone?.id);
+    put('edge.asn', 'ASN', d.connection?.asn);
+    put('edge.asOrg', 'Network operator', d.connection?.org || d.connection?.isp);
+    signals['edge.__source'] = { id: 'edge.__source', label: 'Geo source', value: 'client-side IP lookup (ipwho.is)' };
+  } catch { /* offline or blocked — location act just gets skipped */ }
 }
 
 async function main() {

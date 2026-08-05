@@ -199,7 +199,9 @@ export class Dossier {
 
       wrap.append(input, hint, done, skip);
       this.root.append(wrap);
-      input.focus();
+      // preventScroll: focusing must NOT yank the page down to the box — the
+      // user is still reading above it.
+      input.focus({ preventScroll: true });
     });
   }
 

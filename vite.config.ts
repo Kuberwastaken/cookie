@@ -41,6 +41,9 @@ function devEdgeContext(): Plugin {
 }
 
 export default defineConfig({
+  // Relative base so the build works under a project-pages subpath
+  // (username.github.io/cookie/) as well as at a domain root.
+  base: './',
   plugins: [devEdgeContext()],
   server: { host: '0.0.0.0', port: 5173 },
   build: {

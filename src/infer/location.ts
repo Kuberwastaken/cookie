@@ -25,7 +25,7 @@ export const geolocation: Inference = (s) => {
       confidence: city ? 'likely' : 'guess',
       act: 1, weight: 7,
       evidence: ['edge.city', 'edge.region', 'edge.country', 'edge.ip'],
-      how: `Your IP address resolves to this location. This was known at the network layer — before the page rendered, before any script, before any cookie. Cloudflare hands it to the site for free on every request.`,
+      how: `Your IP address resolves to this location. This is known at the network layer — before the page renders, before any cookie. Every site you visit sees your IP and can look this up instantly.`,
     }));
   }
 
