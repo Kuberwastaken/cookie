@@ -79,7 +79,9 @@ export const gpuTier: Inference = (s) => {
   if (pretty) {
     out.push(claim({
       id: 'device.gpu',
-      text: `Your graphics is ${pretty.article} *${pretty.name}*.`,
+      text: pretty.article
+        ? `Your graphics is ${pretty.article} *${pretty.name}*.`
+        : `Your graphics is *${pretty.name}*.`,
       confidence: pretty.exact ? 'certain' : 'likely',
       act: 3, weight: 9,
       evidence: ['gpu.renderer'],

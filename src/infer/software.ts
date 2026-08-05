@@ -121,7 +121,7 @@ function softwareLine(hit: SoftwareHit): { text: string; weight: number; aside: 
     return { text: `You have programmer fonts installed — you *write code*.`, weight: 6, aside: `These fonts don't come with any OS; you went and installed them.` };
   }
   if (name.includes('japanese') || name.includes('chinese') || name.includes('korean') || name.includes('asian') || name.includes('language')) {
-    return { text: `You have *${hit.name}* language support installed.`, weight: 5, aside: `That's a strong hint about a language you read or write.` };
+    return { text: `You have *${hit.name}* support installed.`, weight: 5, aside: `That's a strong hint about a language you read or write.` };
   }
   return { text: `You have *${hit.name}* installed.`, weight: 3, aside: '' };
 }

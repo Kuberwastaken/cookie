@@ -58,57 +58,58 @@ const CANDIDATES: string[] = [
   'Meiryo',
 ];
 
-const GENERIC_BASELINES = ['monospace', 'sans-serif', 'serif'];
-const PROBE_STRING = 'mmmmmmmmmmlli-.,!@#$%^&*()_+={}[]|\\;:\'"<>?/~`0123456789';
+const GENERIC_BASELINES = ['monospace', 'sans-serif', 'serif'] as const;
+// Two probe strings with different glyph mixes; a real font must shift BOTH.
+const PROBE_STRINGS = [
+  'mmmmmmmmmmlli-.,WQ@#gjpqy0123456789',
+  'ABCDEFabcdef你好こんにちは한국어',
+];
 const PROBE_SIZE = '72px';
+// Sub-pixel noise (esp. under software rasterisers) can wobble widths a hair;
+// require a real shift, not a rounding artefact.
+const THRESHOLD = 0.75;
+// A name no real system ships. If this "detects", the environment is lying
+// (headless font stacks return true for everything) and we can't trust anything.
+const SENTINEL = 'ZZName_NoSuchFontEver_9137xQ';
 
-/** Detect a font via document.fonts.check(), falling back to canvas width comparison. */
-function detectFonts(candidates: string[]): string[] {
-  const detected: string[] = [];
+/**
+ * Measure-based detection only. We deliberately do NOT use document.fonts.check()
+ * — it returns true for unavailable fonts in several browsers and in headless
+ * Chrome, which would make every software inference a false positive.
+ *
+ * Returns null if the sentinel tripped (detection is unreliable in this env).
+ */
+function detectFonts(candidates: string[]): string[] | null {
+  if (typeof document === 'undefined') return null;
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return null;
 
-  const fontsApi = (document as Document & { fonts?: FontFaceSet }).fonts;
-  const canUseFontsApi = !!fontsApi && typeof fontsApi.check === 'function';
-
-  let ctx: CanvasRenderingContext2D | null = null;
-  let baselineWidths: Record<string, number> = {};
-  if (typeof document !== 'undefined') {
-    const canvas = document.createElement('canvas');
-    ctx = canvas.getContext('2d');
-    if (ctx) {
-      for (const base of GENERIC_BASELINES) {
-        ctx.font = `${PROBE_SIZE} ${base}`;
-        baselineWidths[base] = ctx.measureText(PROBE_STRING).width;
-      }
-    }
+  // Baseline widths for each generic × each probe string.
+  const baseline: Record<string, number[]> = {};
+  for (const base of GENERIC_BASELINES) {
+    baseline[base] = PROBE_STRINGS.map((str) => {
+      ctx.font = `${PROBE_SIZE} ${base}`;
+      return ctx.measureText(str).width;
+    });
   }
 
-  const canvasDetect = (name: string): boolean => {
-    if (!ctx) return false;
+  // A font is present only if, under EVERY generic fallback, adding it in front
+  // shifts BOTH probe strings' widths past the noise threshold. Overriding all
+  // three fallbacks is what distinguishes a real font from a metric coincidence.
+  const present = (name: string): boolean => {
     for (const base of GENERIC_BASELINES) {
-      ctx.font = `${PROBE_SIZE} "${name}", ${base}`;
-      const w = ctx.measureText(PROBE_STRING).width;
-      // If it matches ANY generic baseline exactly, the font stack fell back —
-      // not present under that baseline. Font counts as detected only if its
-      // rendered width differs from ALL three generic baselines.
-      if (w === baselineWidths[base]) return false;
+      for (let i = 0; i < PROBE_STRINGS.length; i++) {
+        ctx.font = `${PROBE_SIZE} "${name}", ${base}`;
+        const w = ctx.measureText(PROBE_STRINGS[i]).width;
+        if (Math.abs(w - baseline[base][i]) < THRESHOLD) return false;
+      }
     }
     return true;
   };
 
-  for (const name of candidates) {
-    let present = false;
-    if (canUseFontsApi) {
-      try {
-        present = fontsApi!.check(`12px "${name}"`);
-      } catch { /* fall through to canvas */ }
-    }
-    if (!present && ctx) {
-      present = canvasDetect(name);
-    }
-    if (present) detected.push(name);
-  }
-
-  return detected;
+  if (present(SENTINEL)) return null; // environment lies about font availability
+  return candidates.filter(present);
 }
 
 const WINDOWS_TELLS = [
@@ -190,6 +191,14 @@ export const fontProbe: Probe = {
   tier: 1,
   async run() {
     const detected = detectFonts(CANDIDATES);
+    if (detected === null) {
+      // Sentinel tripped or no canvas — refuse to guess rather than emit noise.
+      return [
+        sig('fonts.count', 'Font count', 0),
+        sig('fonts.software', 'Implied installed software', [], { display: '', entropy: 0 }),
+        sig('fonts.__error', 'Fonts', null, { error: 'font detection unreliable in this environment' }),
+      ];
+    }
     const detectedSet = new Set(detected);
     const sorted = [...detected].sort();
 
