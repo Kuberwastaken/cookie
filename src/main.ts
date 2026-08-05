@@ -2,7 +2,11 @@ import type { EdgeContext, Signal, SignalMap } from './types';
 import { runProbes } from './runner';
 import { Dossier } from './ui/dossier';
 import { recall, forget, type Visit } from './persist';
-import { inferAll, returnVisit, verdict } from './infer';
+import {
+  inferAll, returnVisit, verdict,
+  behavioralClaims, typingClaims, personalityTheatre,
+  buildBidRequest, pixelCookies,
+} from './infer';
 
 // probes
 import { platformProbe, displayProbe, hardwareProbe, environmentProbe, codecProbe, voiceProbe } from './probes/core';
@@ -11,17 +15,23 @@ import { fontProbe } from './probes/fonts';
 import { liesProbe } from './probes/lies';
 import { automationProbe } from './probes/automation';
 import { incognitoProbe } from './probes/incognito';
-import { behaviorProbe } from './probes/behavior';
+import { cpuArchProbe, mathProbe, applePayProbe, mathmlProbe } from './probes/deep';
+import { behaviorCapture } from './probes/interactive';
 import { localNetProbe } from './probes/localnet';
 import { appsProbe } from './probes/apps';
 import { extProbe } from './probes/extensions';
+import { webrtcProbe } from './probes/webrtc';
+import { permissionProbe } from './probes/permissions';
 
 const PASSIVE = [
   platformProbe, displayProbe, hardwareProbe, environmentProbe, codecProbe, voiceProbe,
   gpuProbe, canvasProbe, audioProbe, domRectProbe, fontProbe,
-  liesProbe, automationProbe, incognitoProbe, behaviorProbe,
+  liesProbe, automationProbe, incognitoProbe,
+  cpuArchProbe, mathProbe, applePayProbe, mathmlProbe,
 ];
-const INVASIVE = [localNetProbe, appsProbe, extProbe];
+const INVASIVE = [localNetProbe, appsProbe, extProbe, webrtcProbe, permissionProbe];
+
+const TYPING_TARGET = 'the quick brown fox jumps over the lazy dog';
 
 /** Pull the edge context and fold it into the signal map under `edge.*`. */
 async function loadEdge(signals: SignalMap): Promise<void> {
@@ -59,9 +69,11 @@ async function main() {
   const controller = new AbortController();
   addEventListener('beforeunload', () => controller.abort());
 
+  // Start watching behaviour immediately, so it accumulates through the whole visit.
+  behaviorCapture.attach();
+
   await dossier.boot();
 
-  // Gather passive signals and edge context together.
   const [signals, visit] = await Promise.all([
     (async () => {
       const s: SignalMap = {};
@@ -72,13 +84,12 @@ async function main() {
     recall(),
   ]);
 
-  // Reveal the passive dossier act by act.
-  const passiveClaims = inferAll(signals);
-  for (const c of passiveClaims) await dossier.reveal(c, signals);
+  // Acts 1–5: the passive dossier.
+  for (const c of inferAll(signals)) await dossier.reveal(c, signals);
 
-  // The invasive gate.
+  // Act 6: the invasive gate.
   const consent = await dossier.gate(
-    "Everything above was passive — no permission, no click, nothing stored. There's a louder set of tricks: scanning the services running on your own machine, guessing which desktop apps and browser extensions you have. Want to see those too?",
+    "Everything so far was passive — no permission, no click, nothing stored. There's a louder set: scanning your own machine, leaking your IP from behind a VPN, reading which permissions and devices you've already granted. Want to see those?",
     'Show me the invasive ones',
   );
 
@@ -89,30 +100,50 @@ async function main() {
     if (invasiveClaims.length) {
       for (const c of invasiveClaims) await dossier.reveal(c, signals);
     } else {
-      dossier.section('<p class="act-label">What is running on your machine</p><p class="claim likely">Nothing detectable this time — your browser blocked the probes, or there was nothing listening. That\'s the good outcome.</p>');
+      dossier.section('<p class="act-label">What we can reach on your machine</p><p class="claim likely" style="opacity:1;transform:none">Nothing detectable this time — your browser blocked the probes, or there was nothing listening. That\'s the good outcome.</p>');
     }
   }
 
-  // Return-visit act.
+  // Act 7: who you are (behavioural). Interactive typing, then the profile.
+  const { input } = await dossier.typingPrompt(TYPING_TARGET);
+  const stop = input ? behaviorCapture.captureTyping(input, TYPING_TARGET) : null;
+  // Give the sampler a moment to flush the last keyups.
+  await new Promise((r) => setTimeout(r, stop ? 400 : 0));
+  if (stop) Object.assign(signals, keyed(stop()));
+  Object.assign(signals, keyed(behaviorCapture.snapshot()));
+
+  const profile = [
+    ...behavioralClaims(signals),
+    ...typingClaims(signals),
+    ...personalityTheatre(signals),
+  ].sort((a, b) => a.weight - b.weight);
+  for (const c of profile) await dossier.reveal(c, signals);
+
+  // Act 8: what you're worth (the ad-profile receipt).
+  dossier.adReceipt(buildBidRequest(signals), pixelCookies());
+
+  // Act 9: return visit.
   for (const c of returnVisit(visit)) await dossier.reveal(c, signals);
 
-  // The receipt.
+  // Act 10: the receipt.
   const { claims: vClaims, fingerprint, bits } = verdict(signals);
   for (const c of vClaims) await dossier.reveal(c, signals);
-  renderFinale(dossier, signals, fingerprint, bits, visit);
+  renderFinale(dossier, signals, fingerprint, bits);
 }
 
-function renderFinale(
-  dossier: Dossier, signals: SignalMap, fingerprint: string, bits: number, visit: Visit,
-) {
+function keyed(signals: Signal[]): SignalMap {
+  const m: SignalMap = {};
+  for (const s of signals) m[s.id] = s;
+  return m;
+}
+
+function renderFinale(dossier: Dossier, signals: SignalMap, fingerprint: string, bits: number) {
   const rows = Object.values(signals)
-    .filter((s) => !s.error && !s.id.startsWith('edge.') === false || !s.error)
     .filter((s) => !s.error)
     .map((s) => `<tr><td>${esc(s.label)}</td><td>${esc(display(s))}</td></tr>`)
     .join('');
 
   const el = dossier.section(`
-    <p class="act-label">The receipt</p>
     <p class="verdict">Your device fingerprint, this visit:</p>
     <p class="fingerprint">${fingerprint}</p>
     <p class="how" style="border:0;margin:0 0 2rem;padding:0">${bits.toFixed(1)} bits of entropy · assembled from ${Object.keys(signals).length} signals · zero cookies · zero permission prompts</p>

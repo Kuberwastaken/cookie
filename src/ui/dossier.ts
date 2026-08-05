@@ -6,9 +6,11 @@ export const ACTS: Record<number, { label: string; invasive?: boolean }> = {
   3: { label: 'What you are using it on' },
   4: { label: "Things that don't add up" },
   5: { label: 'What you have installed' },
-  6: { label: 'What is running on your machine right now', invasive: true },
-  7: { label: 'You, specifically', invasive: true },
-  8: { label: 'The receipt' },
+  6: { label: 'What we can reach on your machine', invasive: true },
+  7: { label: 'Who you are — not your device', invasive: true },
+  8: { label: 'What you are worth' },
+  9: { label: "We've met before" },
+  10: { label: 'The receipt' },
 };
 
 const HEDGE: Record<Claim['confidence'], string> = {
@@ -112,6 +114,71 @@ export class Dossier {
     el.innerHTML = html;
     this.root.append(el);
     return el;
+  }
+
+  /**
+   * The interactive typing step. Shows a target sentence and an input; resolves
+   * with the input element (whose keystrokes a probe has been recording) once
+   * the user has typed enough, or immediately if they skip.
+   */
+  typingPrompt(target: string): Promise<{ input: HTMLInputElement | null; skipped: boolean }> {
+    return new Promise((resolve) => {
+      const wrap = document.createElement('section');
+      wrap.className = 'act invasive';
+      wrap.innerHTML = `
+        <p class="act-label">Now let's profile you, not your device</p>
+        <p class="claim likely" style="opacity:1;transform:none">Type this sentence. We'll read how you type, not just what.</p>
+        <p class="type-target">${escape(target)}</p>
+      `;
+      const input = document.createElement('input');
+      input.className = 'type-input';
+      input.type = 'text';
+      input.autocomplete = 'off';
+      input.autocapitalize = 'off';
+      input.spellcheck = false;
+      input.setAttribute('aria-label', 'Type the sentence above');
+      const skip = document.createElement('button');
+      skip.className = 'go ghost';
+      skip.textContent = 'Skip this';
+      skip.style.marginTop = '1rem';
+
+      let done = false;
+      const finish = (skipped: boolean) => {
+        if (done) return; done = true;
+        input.disabled = true; skip.remove();
+        resolve({ input: skipped ? null : input, skipped });
+      };
+      input.addEventListener('input', () => {
+        // Finish when they've typed roughly the whole thing.
+        if (input.value.length >= Math.min(target.length - 4, 24)) {
+          setTimeout(() => finish(false), 350);
+        }
+      });
+      skip.addEventListener('click', () => finish(true));
+
+      wrap.append(input, skip);
+      this.root.append(wrap);
+      input.focus();
+    });
+  }
+
+  /** Render the OpenRTB receipt: a syntax-lit JSON block with a caption. */
+  adReceipt(bidRequest: unknown, pixels: Array<{ name: string; value: string; means: string }>): void {
+    const json = JSON.stringify(bidRequest, null, 2);
+    const el = document.createElement('section');
+    el.className = 'act';
+    const pixelHtml = pixels.length
+      ? `<p class="claim likely" style="opacity:1;transform:none">Your browser is already carrying tracking IDs:</p>` +
+        pixels.map((p) => `<div class="how" style="margin-bottom:.6rem"><b>${escape(p.name)}</b> = ${escape(p.value)}\n${escape(p.means)}</div>`).join('')
+      : '';
+    el.innerHTML = `
+      <p class="act-label">What you are worth</p>
+      <p class="claim likely" style="opacity:1;transform:none">Every ad-supported page you open auctions you to dozens of bidders in about a tenth of a second. This is the actual message that describes you — built just now, from your real data, in the real format (OpenRTB 2.6):</p>
+      <pre class="raw json-receipt">${escape(json)}</pre>
+      <p class="how" style="border:0;margin:.4rem 0 1.4rem;padding:0">Everything here is real except <b>user.data.segment</b> — that's where a data broker attaches your inferred interests ("in-market for a car", "new parent", "cardholder"). We can't show yours because we're not a paying buyer. The bidders can.</p>
+      ${pixelHtml}
+    `;
+    this.root.append(el);
   }
 }
 

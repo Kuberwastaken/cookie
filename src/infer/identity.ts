@@ -94,7 +94,7 @@ export function returnVisit(visit: Visit): Claim[] {
   const out: Claim[] = [claim({
     id: 'id.return',
     text: `I've seen you before. You first showed up *${when}*. This is visit number *${visit.count}*.`,
-    confidence: 'certain', act: 7, weight: 8,
+    confidence: 'certain', act: 9, weight: 8,
     evidence: [],
     how: `On your first visit I stored a random tag — not in a cookie, but across localStorage, IndexedDB and the Cache API at once. I never learned your name; I just recognised the tag.`,
   })];
@@ -103,7 +103,7 @@ export function returnVisit(visit: Visit): Claim[] {
     out.push(claim({
       id: 'id.evercookie',
       text: `And you *cleared some of it* — ${wiped} of my hiding places were empty when you arrived. I restored them from the ones you missed. This is what tracking looks like without cookies.`,
-      confidence: 'certain', act: 7, weight: 10,
+      confidence: 'certain', act: 9, weight: 10,
       evidence: [],
       how: `You wiped ${visit.restored.join(', ')}, but ${visit.survivors.join(', ')} still held the tag. I copied it back into the empty ones. To actually forget you, every store has to be cleared at the same instant — which is why "clear cookies" was never enough. (There's a Forget Me button below. It genuinely works.)`,
     }));
@@ -121,7 +121,7 @@ export function verdict(s: SignalMap): { claims: Claim[]; fingerprint: string; b
   const claims: Claim[] = [claim({
     id: 'id.entropy',
     text: `Putting it together: roughly *1 in ${format(oneIn)}* browsers look like yours. None of this used a cookie. None of it asked permission.`,
-    confidence: 'likely', act: 8, weight: 9,
+    confidence: 'likely', act: 10, weight: 9,
     evidence: ['gpu.renderer', 'canvas.hash', 'fonts.hash', 'audio.hash'],
     how: `We summed the identifying information across every signal (${bits.toFixed(1)} bits of entropy) and turned it into a rarity. The exact number is an estimate; the point is that "anonymous" browsing isn't.`,
   })];
