@@ -73,6 +73,14 @@ a:visited { color: #551a8b; }
 .claim.likely { color: #000; }
 .claim.guess { color: #333; font-style: italic; }
 
+/* the opening device-judgement hook — bigger, sets the tone */
+.claim.hook {
+  font-size: 1.75rem;
+  line-height: 1.3;
+  font-weight: bold;
+  margin-bottom: 1.25rem;
+}
+
 /* the blue highlight — this is the only colour on the page besides links */
 .claim em { font-style: normal; font-weight: bold; color: var(--blue); }
 

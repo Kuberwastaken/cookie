@@ -6,11 +6,14 @@ import { localServices, extensions } from './invasive';
 import { lieDetection, automation } from './identity';
 import { webrtcClaims, permissionClaims, deepClaims } from './network';
 import { trackingHypocrisy, batteryState, sessionMeta } from './session';
+import { deviceHook } from './hook';
 
 /** Every stateless inference. Stateful ones (return visit, verdict, behavioural,
  *  ad-profile) are called directly by main.ts because they need extra context
  *  or run at a specific point in the narrative. */
 const INFERENCES: Inference[] = [
+  // act 0 — the opening device-judgement hook
+  deviceHook,
   // act 1 — location
   geolocation, handshake,
   // act 2 — software/OS/CPU

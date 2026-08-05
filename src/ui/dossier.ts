@@ -2,6 +2,7 @@ import type { Claim, SignalMap } from '../types';
 import type { KeyEvent } from '../probes/interactive';
 
 export const ACTS: Record<number, { label: string; invasive?: boolean }> = {
+  0: { label: '' },
   1: { label: 'Where you are' },
   2: { label: 'What you are using' },
   3: { label: 'What you are using it on' },
@@ -49,7 +50,8 @@ export class Dossier {
     const meta = ACTS[n] ?? { label: '' };
     el = document.createElement('section');
     el.className = meta.invasive ? 'act invasive' : 'act';
-    el.innerHTML = `<p class="act-label">${escape(meta.label)}</p>`;
+    // Empty label (e.g. the opening hook) gets no label paragraph.
+    el.innerHTML = meta.label ? `<p class="act-label">${escape(meta.label)}</p>` : '';
     this.root.append(el);
     this.acts.set(n, el);
     return el;
@@ -65,7 +67,7 @@ export class Dossier {
 
     const host = this.act(claim.act);
     const p = document.createElement('p');
-    p.className = `claim ${claim.confidence}`;
+    p.className = claim.act === 0 ? 'claim hook' : `claim ${claim.confidence}`;
     p.innerHTML = markup(claim.text) + `${HEDGE[claim.confidence]}`;
 
     const btn = document.createElement('button');

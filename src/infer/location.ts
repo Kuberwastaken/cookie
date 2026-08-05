@@ -49,20 +49,38 @@ export const geolocation: Inference = (s) => {
  * The contradiction engine. IP geo vs. browser timezone is the single most
  * legible "your VPN doesn't hide you" moment, and almost nobody demos it.
  */
+/** Actual UTC offset (minutes) a named timezone is at right now — handles DST. */
+function tzOffsetMinutes(tz: string): number | null {
+  try {
+    const d = new Date();
+    const utc = new Date(d.toLocaleString('en-US', { timeZone: 'UTC' }));
+    const local = new Date(d.toLocaleString('en-US', { timeZone: tz }));
+    return Math.round((local.getTime() - utc.getTime()) / 60000);
+  } catch { return null; }
+}
+
 export const vpnContradiction: Inference = (s) => {
-  const ipTz = str(s, 'edge.timezone');           // timezone Cloudflare derived from the IP
-  const browserTz = str(s, 'env.timezone');        // timezone the browser actually reports
+  const ipTz = str(s, 'edge.timezone');           // timezone derived from the IP
+  const browserTz = str(s, 'env.timezone');        // timezone the browser reports
   const out: Claim[] = [];
 
-  if (ipTz && browserTz && ipTz !== browserTz) {
+  // Compare real UTC OFFSETS, not zone-name strings — Asia/Calcutta and
+  // Asia/Kolkata are the same place, and only the offset difference is a VPN.
+  const ipOff = ipTz ? tzOffsetMinutes(ipTz) : null;
+  const browserOff = browserTz
+    ? tzOffsetMinutes(browserTz)
+    : (typeof s['env.tzOffset']?.value === 'number' ? (s['env.tzOffset'].value as number) : null);
+  const offsetMismatch = ipOff != null && browserOff != null && Math.abs(ipOff - browserOff) > 20;
+
+  if (ipTz && browserTz && offsetMismatch) {
     const ipCity = ipTz.split('/').pop()?.replace(/_/g, ' ');
     const realCity = browserTz.split('/').pop()?.replace(/_/g, ' ');
     out.push(claim({
       id: 'loc.vpn',
-      text: `Your IP says *${ipCity}*. Your computer's clock says *${realCity}*. One of those is a VPN — and your clock is the one telling the truth.`,
+      text: `Your IP puts you in *${ipCity}* (${fmtOffset(ipOff!)}). Your computer's clock is set to *${realCity}* (${fmtOffset(browserOff!)}). One of those is a VPN — and your clock is the one telling the truth.`,
       confidence: 'likely', act: 4, weight: 9,
       evidence: ['edge.timezone', 'env.timezone', 'edge.city'],
-      how: `The network sees your VPN exit (${ipTz}). But your operating system's own timezone (${browserTz}) travelled with you through the tunnel — the VPN can't rewrite it. When the two disagree, you're tunnelling, and the OS timezone points at where you actually are.`,
+      how: `The network sees your VPN exit (${ipTz}, ${fmtOffset(ipOff!)}). But your operating system's own timezone (${browserTz}, ${fmtOffset(browserOff!)}) travelled with you through the tunnel — the VPN can't rewrite it. The offsets genuinely differ, so you're tunnelling, and the OS timezone points at where you actually are.`,
     }));
   }
 
@@ -71,8 +89,8 @@ export const vpnContradiction: Inference = (s) => {
   const country = str(s, 'edge.country');
   if (langs?.length && country && !langMatchesCountry(langs, country)) {
     const langName = languageName(langs[0].split('-')[0]) || langs[0];
-    // If the timezone ALSO disagrees with the IP, VPN jumps to the top of the list.
-    const tzMismatch = ipTz && browserTz && ipTz !== browserTz;
+    // If the timezone offset ALSO disagrees, VPN jumps to the top of the list.
+    const tzMismatch = offsetMismatch;
     out.push(claim({
       id: 'loc.langMismatch',
       text: tzMismatch
@@ -95,6 +113,12 @@ const LANG_NAMES: Record<string, string> = {
   he: 'Hebrew', th: 'Thai', vi: 'Vietnamese', id: 'Indonesian', uk: 'Ukrainian',
 };
 function languageName(code: string): string { return LANG_NAMES[code.toLowerCase()] ?? ''; }
+
+function fmtOffset(min: number): string {
+  const sign = min >= 0 ? '+' : '-';
+  const a = Math.abs(min);
+  return `UTC${sign}${String(Math.floor(a / 60)).padStart(2, '0')}:${String(a % 60).padStart(2, '0')}`;
+}
 
 /** TLS/HTTP fingerprint captured during the handshake, before any JS. */
 export const handshake: Inference = (s) => {
