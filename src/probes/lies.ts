@@ -102,7 +102,28 @@ function clientLitter(): string[] {
     if (!cleanWin) { document.body.removeChild(wrap); return []; }
     const cleanKeys = new Set(Object.getOwnPropertyNames(cleanWin));
     const topKeys = Object.getOwnPropertyNames(window);
-    const extra = topKeys.filter((k) => !cleanKeys.has(k));
+    const win = window as unknown as Record<string, unknown>;
+    const extra = topKeys.filter((k) => {
+      if (cleanKeys.has(k)) return false;
+      // Frame indices (window[0], window[1]…) appear because the page has
+      // iframes and the blank baseline doesn't — not injected litter.
+      if (/^\d+$/.test(k)) return false;
+      // An extension global is always a valid identifier; anything else
+      // (weird keys) isn't what we're looking for.
+      if (!/^[A-Za-z_$][\w$]*$/.test(k)) return false;
+      // Named-access DOM globals are NOT injected litter: any element with an
+      // id (e.g. our own <main id="dossier">) shows up as window[id]. Exclude
+      // anything whose value is a DOM node / collection, and anything that
+      // throws or is undefined on access.
+      let v: unknown;
+      try { v = win[k]; } catch { return false; }
+      if (v == null) return false;
+      if (v instanceof Node) return false;
+      if (typeof HTMLCollection !== 'undefined' && v instanceof HTMLCollection) return false;
+      if (typeof NodeList !== 'undefined' && v instanceof NodeList) return false;
+      if (typeof Window !== 'undefined' && v instanceof Window) return false; // frame refs
+      return true;
+    });
     document.body.removeChild(wrap);
     return extra.slice(0, 40);
   } catch {
