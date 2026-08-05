@@ -27,6 +27,8 @@ html, body {
   font-family: var(--serif);
   font-size: 18px;
   line-height: 1.5;
+  /* wide content scrolls inside its own box; the page itself never does */
+  overflow-x: hidden;
 }
 
 body {
@@ -231,11 +233,14 @@ button.go:disabled { color: #aaa; border-color: #ccc; cursor: default; }
   font-family: var(--mono); font-size: 0.75rem; line-height: 1.6; color: var(--ink);
   background: var(--box); border: 1px solid var(--rule); padding: 0.8rem;
   overflow-x: auto; max-height: 26rem; overflow-y: auto;
+  width: 100%; max-width: 100%;
 }
-.raw table { border-collapse: collapse; }
-.raw td { padding: 0.08rem 0.8rem 0.08rem 0; vertical-align: top; }
-.raw td:first-child { color: var(--faint); white-space: nowrap; }
-.json-receipt { max-height: 30rem; color: var(--ink); }
+/* .raw sits directly on the table — target it, not a descendant. Fixed layout
+   + 100% width makes long values wrap instead of blowing out the width. */
+table.raw { border-collapse: collapse; table-layout: fixed; }
+.raw td { padding: 0.08rem 0.8rem 0.08rem 0; vertical-align: top; overflow-wrap: anywhere; word-break: break-word; }
+.raw td:first-child { color: var(--faint); width: 34%; }
+.json-receipt { max-height: 30rem; color: var(--ink); white-space: pre; }
 
 .footnote { font-family: var(--mono); font-size: 0.78rem; line-height: 1.7; color: var(--grey); margin-top: 2.5rem; }
 .footnote a { color: var(--blue); }

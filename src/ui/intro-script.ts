@@ -55,6 +55,10 @@ function specLines(s: SignalMap): string[] {
   const cores = numOf('hw.cores');
   const hz = numOf('display.refreshHz');
   const res = s['display.resolution']?.value as [number, number] | undefined;
+  const dpr = numOf('display.pixelRatio') ?? 1;
+  // Physical pixels (CSS × DPR) — what people actually recognise as their
+  // resolution (e.g. 1080×2400), not the logical 420×934 the browser reports.
+  const phys = res ? ([Math.round(res[0] * dpr), Math.round(res[1] * dpr)] as [number, number]) : undefined;
 
   const { headline, tier } = deviceProfile(ua, gpuL, str('platform.model'), res, cores);
 
@@ -69,7 +73,7 @@ function specLines(s: SignalMap): string[] {
   if (gpuName && !/apple m/i.test(headline)) bits.push(gpuName);
   if (cores) bits.push(`${cores} CPU cores`);
   if (hz && hz >= 118) bits.push(`a ${hz}Hz ${/apple|iphone|ipad|mac/i.test(ua) ? 'ProMotion ' : ''}screen`);
-  if (res) bits.push(`a ${res[0]}×${res[1]} display`);
+  if (phys) bits.push(`a ${phys[0]}×${phys[1]} display`);
 
   if (bits.length >= 2) {
     const closer = tier === 'high' ? 'All the bells and whistles.' : tier === 'low' ? 'Doing its best, honestly.' : 'A perfectly capable setup.';
