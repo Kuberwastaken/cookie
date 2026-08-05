@@ -100,24 +100,35 @@ class BehaviorCapture {
 
   // --- pointer / device ----------------------------------------------------
 
-  /** Mouse vs trackpad from wheel-delta shape — the honest, reliable call. */
-  private classifyPointer(): { type: string; why: string } {
-    if (this.sawPen) return { type: 'stylus', why: 'pen pointer events' };
-    if (this.pointerType === 'touch') return { type: 'touchscreen', why: 'touch pointer events' };
-    if (!this.wheels.length) return { type: this.pointerType, why: 'pointer events only' };
+  /**
+   * Mouse vs trackpad from wheel-delta shape. The reliable discriminator is the
+   * MEDIAN delta magnitude: a mouse wheel clicks in big, repeating notches
+   * (~100-120px, only a couple of distinct values); a trackpad emits small,
+   * varied, often fractional deltas. We lean trackpad unless it clearly looks
+   * like a chunky wheel, and flag `sure:false` when the evidence is thin.
+   */
+  private classifyPointer(): { type: string; why: string; sure: boolean } {
+    if (this.sawPen) return { type: 'stylus', why: 'pen pointer events', sure: true };
+    if (this.pointerType === 'touch') return { type: 'touchscreen', why: 'touch pointer events', sure: true };
 
-    // Trackpads: many small, often fractional, non-repeating pixel deltas.
-    // Mice: fewer, chunky, integer deltas that repeat (wheel notches).
+    if (this.wheels.length < 3) return { type: this.pointerType, why: 'barely scrolled — hard to tell', sure: false };
+
     const pixel = this.wheels.filter((w) => w.mode === 0);
-    if (!pixel.length) return { type: 'mouse', why: 'line-mode wheel (classic mouse)' };
-    const fractional = pixel.filter((w) => !Number.isInteger(w.dy)).length / pixel.length;
-    const smallCount = pixel.filter((w) => Math.abs(w.dy) < 40).length / pixel.length;
-    const uniq = new Set(pixel.map((w) => Math.abs(Math.round(w.dy)))).size / pixel.length;
+    const lineMode = this.wheels.filter((w) => w.mode === 1);
+    if (!pixel.length && lineMode.length) return { type: 'mouse', why: 'line-mode wheel notches', sure: true };
 
-    if (fractional > 0.2 || (smallCount > 0.6 && uniq > 0.4)) {
-      return { type: 'trackpad', why: 'fine-grained, non-repeating scroll deltas' };
-    }
-    return { type: 'mouse', why: 'chunky, repeating wheel deltas' };
+    const mags = pixel.map((w) => Math.abs(w.dy)).filter((x) => x > 0).sort((a, b) => a - b);
+    if (!mags.length) return { type: this.pointerType, why: 'no usable scroll deltas', sure: false };
+    const median = mags[Math.floor(mags.length / 2)];
+    const anyFractional = pixel.some((w) => !Number.isInteger(w.dy));
+    const distinct = new Set(pixel.map((w) => Math.abs(Math.round(w.dy)))).size;
+
+    // macOS trackpads emit fractional pixel deltas — a dead giveaway.
+    if (anyFractional) return { type: 'trackpad', why: 'fractional, fine-grained scroll deltas', sure: true };
+    // A mouse wheel: big deltas, very few distinct values (repeating notches).
+    if (median >= 90 && distinct <= 4) return { type: 'mouse', why: 'big, repeating wheel notches', sure: true };
+    // Everything else — small and/or varied — is a trackpad.
+    return { type: 'trackpad', why: 'small, varied scroll deltas', sure: median < 60 || distinct > 5 };
   }
 
   // --- reading -------------------------------------------------------------
@@ -167,6 +178,7 @@ class BehaviorCapture {
 
     return [
       sig('bhv.pointer', 'Pointer device', p.type, { display: `${p.type} (${p.why})`, entropy: 1.5 }),
+      sig('bhv.pointerSure', 'Pointer classification confident', p.sure),
       sig('bhv.dwellSec', 'Time on page (s)', Math.round((performance.now() - this.started) / 1000)),
       sig('bhv.scrollDepth', 'Scroll depth', +r.depth.toFixed(2)),
       sig('bhv.wpm', 'Reading speed (wpm)', r.wpm),

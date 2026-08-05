@@ -24,8 +24,11 @@ const str = (s: SignalMap, id: string): string | undefined => {
 export function behavioralClaims(s: SignalMap): Claim[] {
   const out: Claim[] = [];
 
-  // Input device — the honest, surprising one.
+  // Input device. Mouse-vs-trackpad is inference, not an API, so we only assert
+  // it when the scroll evidence is clear; otherwise we stay quiet rather than
+  // guess wrong (calling a trackpad a "mouse" is the classic false positive).
   const pointer = str(s, 'bhv.pointer');
+  const pointerSure = s['bhv.pointerSure']?.value === true;
   if (pointer && pointer !== 'none') {
     const label: Record<string, string> = {
       trackpad: `You're on a *trackpad* — almost certainly a laptop.`,
@@ -33,11 +36,12 @@ export function behavioralClaims(s: SignalMap): Claim[] {
       touchscreen: `You're on a *touchscreen*.`,
       stylus: `You're using a *stylus*.`,
     };
-    if (label[pointer]) {
+    const isInferred = pointer === 'mouse' || pointer === 'trackpad';
+    if (label[pointer] && (!isInferred || pointerSure)) {
       out.push(claim({
-        id: 'pf.pointer', text: label[pointer], confidence: 'likely', act: 7, weight: 4,
+        id: 'pf.pointer', text: label[pointer], confidence: isInferred ? 'likely' : 'certain', act: 7, weight: 4,
         evidence: ['bhv.pointer'],
-        how: `Your scroll deltas gave it away. Trackpads emit fine-grained, fractional, never-repeating scroll amounts; a mouse wheel clicks in fixed integer notches. There's no API that tells us the difference — we inferred it from the shape of your scrolling.`,
+        how: `Your scroll deltas gave it away. Trackpads emit small, varied, often fractional scroll amounts; a mouse wheel clicks in big, repeating notches (~100px each). There's no API that tells us the difference — we inferred it from the shape of your scrolling.`,
       }));
     }
   }
