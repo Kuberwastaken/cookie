@@ -30,6 +30,11 @@ export const batteryState: Inference = (s) => {
   const level = num(s, 'hw.batteryLevel');
   const charging = s['hw.charging']?.value;
   if (level == null) return [];
+  // A desktop with NO battery reports exactly level 1.0 + charging:true, which
+  // is indistinguishable from a plugged-in laptop at full charge. Saying "your
+  // battery is at 100%" to someone with no battery is the tell we avoid, so we
+  // only speak when there's something a battery-less machine can't produce.
+  if (level >= 1 && charging !== false) return [];
   const pct = Math.round(level * 100);
   return [claim({
     id: 'ses.battery',

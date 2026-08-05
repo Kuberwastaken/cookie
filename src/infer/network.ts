@@ -97,14 +97,24 @@ export const permissionClaims: Inference = (s) => {
 /** CPU architecture from the NaN sign-bit trick, a silent "creepy fact." */
 export const deepClaims: Inference = (s) => {
   const out: Claim[] = [];
-  const arch = s['deep.archGuess']?.value as string | undefined;
-  if (arch && arch !== 'unknown') {
+  // Prefer the browser's own UA-CH architecture hint, which is authoritative.
+  // The NaN sign-bit trick is only a fallback, and we stay silent when the two
+  // disagree rather than confidently telling an i9 owner they're on ARM.
+  const hinted = (s['platform.arch']?.value as string | undefined)?.toLowerCase();
+  const nanGuess = s['deep.archGuess']?.value as string | undefined;
+  const hintedFamily = hinted ? (hinted.includes('arm') ? 'ARM-family' : hinted.includes('x86') ? 'x86-family' : undefined) : undefined;
+  const agree = hintedFamily && nanGuess && hintedFamily === nanGuess;
+  const arch = hintedFamily ?? (nanGuess && nanGuess !== 'unknown' ? nanGuess : undefined);
+
+  if (arch && (!hintedFamily || !nanGuess || nanGuess === 'unknown' || agree)) {
     out.push(claim({
       id: 'net.arch',
-      text: `Your CPU is *${arch}*, we know from a single subtraction.`,
-      confidence: 'likely', act: 2, weight: 4,
-      evidence: ['deep.archGuess', 'deep.nanArch'],
-      how: `Compute Infinity minus Infinity and you get NaN, "not a number." But NaN has a sign bit, and which way it points differs between x86 and ARM processors. One subtraction, and your CPU family leaks. Nothing can spoof this without breaking arithmetic.`,
+      text: `Your CPU is *${arch}*.`,
+      confidence: hintedFamily ? 'certain' : 'guess', act: 2, weight: 4,
+      evidence: ['platform.arch', 'deep.archGuess', 'deep.nanArch'],
+      how: hintedFamily
+        ? `Your browser volunteers its CPU architecture in a client hint, no permission needed.${agree ? ' We double-checked with an arithmetic trick: compute Infinity minus Infinity and the resulting NaN has a sign bit that differs between x86 and ARM. Both agree.' : ''}`
+        : `Compute Infinity minus Infinity and you get NaN, "not a number." But NaN has a sign bit, and which way it points differs between x86 and ARM processors. One subtraction, and your CPU family leaks. This is a heuristic, so treat it as a guess.`,
     }));
   }
   if (s['deep.applePay']?.value === 'available') {

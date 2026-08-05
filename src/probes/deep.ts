@@ -18,9 +18,10 @@ export const cpuArchProbe: Probe = {
       f[0] = Infinity;
       f[0] = f[0] - f[0]; // Inf - Inf = NaN; the sign bit is CPU/FPU dependent
       const signByte = u8[3];
-      // Heuristic only: x86/x86-64 FPUs canonicalise this NaN with sign bit 0,
-      // ARM FPUs typically set it (byte 255 or otherwise nonzero).
-      const archGuess = signByte === 0 ? 'x86-family' : signByte === 255 ? 'ARM-family' : 'unknown';
+      // Verified empirically: x86/x86-64 default NaN is 0xFFC00000 (sign bit SET,
+      // top byte 255); ARM's is 0x7FC00000 (sign bit clear, top byte 127).
+      // Anything else we refuse to guess from.
+      const archGuess = signByte === 255 ? 'x86-family' : signByte === 127 ? 'ARM-family' : 'unknown';
 
       return [
         sig('deep.nanArch', 'NaN sign byte', signByte, { entropy: 1 }),

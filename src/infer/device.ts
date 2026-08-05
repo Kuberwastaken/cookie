@@ -145,16 +145,38 @@ export const peripherals: Inference = (s) => {
   const cams = num(s, 'hw.cameras');
   const mics = num(s, 'hw.microphones');
   if (cams == null && mics == null) return [];
-  const parts: string[] = [];
-  if (cams != null) parts.push(`*${cams}* camera${cams === 1 ? '' : 's'}`);
-  if (mics != null) parts.push(`*${mics}* microphone${mics === 1 ? '' : 's'}`);
-  if (!parts.length) return [];
+
+  // Without camera/mic permission the browser collapses enumerateDevices() to a
+  // single placeholder entry per kind, so the numbers are NOT real counts, they
+  // only prove a device of that kind exists. Claiming "1 microphone" to someone
+  // with three is the kind of confident-and-wrong we refuse to ship.
+  const exact = s['hw.deviceLabels']?.value === true;
+
+  if (exact) {
+    const parts: string[] = [];
+    if (cams != null) parts.push(`*${cams}* camera${cams === 1 ? '' : 's'}`);
+    if (mics != null) parts.push(`*${mics}* microphone${mics === 1 ? '' : 's'}`);
+    if (!parts.length) return [];
+    return [claim({
+      id: 'device.peripherals',
+      text: `You have ${parts.join(' and ')} plugged in right now.`,
+      confidence: 'certain', act: 3, weight: 6,
+      evidence: ['hw.cameras', 'hw.microphones', 'hw.speakers', 'hw.deviceLabels'],
+      how: `enumerateDevices() lists every camera, mic and speaker attached. You've granted this browser device access at some point, so we get the real tally and the names too.`,
+    })];
+  }
+
+  // Presence only, which is all the browser will honestly tell us.
+  const kinds: string[] = [];
+  if (cams) kinds.push('a camera');
+  if (mics) kinds.push('a microphone');
+  if (!kinds.length) return [];
   return [claim({
     id: 'device.peripherals',
-    text: `You have ${parts.join(' and ')} plugged in right now.`,
-    confidence: 'certain', act: 3, weight: 6,
-    evidence: ['hw.cameras', 'hw.microphones', 'hw.speakers'],
-    how: `enumerateDevices() returns the count and kind of every camera, mic and speaker attached, no permission needed. Only the device *names* are gated; the tally is free.`,
+    text: `You have ${kinds.join(' and ')} attached.`,
+    confidence: 'likely', act: 3, weight: 5,
+    evidence: ['hw.cameras', 'hw.microphones', 'hw.speakers', 'hw.deviceLabels'],
+    how: `enumerateDevices() reveals which *kinds* of device you have without any permission prompt. It won't give the real number or the names until you grant access, so we won't pretend to know how many, only that they're there.`,
   })];
 };
 
