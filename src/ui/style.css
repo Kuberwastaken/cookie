@@ -94,9 +94,10 @@ body {
 .claim.likely { color: #c9c4bb; }
 .claim.guess  { color: #9a958c; font-style: italic; }
 
-/* the invasive act reads differently on purpose */
-.act.invasive .claim { color: #f0d9d2; }
-.act.invasive .act-label { color: var(--alarm); }
+/* the invasive act: clean white on black, only the label carries a red tick */
+.act.invasive .claim { color: #ffffff; }
+.act.invasive .act-label { color: var(--dim); }
+.act.invasive .act-label::before { content: '● '; color: var(--alarm); }
 
 .claim em { font-style: normal; color: #fff; box-shadow: inset 0 -0.42em 0 rgba(212, 85, 60, 0.24); }
 
@@ -232,6 +233,31 @@ button.go.ghost:hover { color: var(--ink); border-color: var(--dim); }
   outline: none;
 }
 .type-input:focus { border-color: var(--alarm); }
+.type-input:disabled { opacity: 0.5; }
+
+.type-hint {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--faint);
+  margin: 0.6rem 0 0;
+  min-height: 1em;
+}
+.type-hint.ready { color: var(--alarm); }
+
+/* the "scanning…" placeholder shown while invasive probes run */
+.scanning {
+  font-family: var(--mono);
+  font-size: 0.9rem;
+  color: var(--dim);
+  padding: 1rem 0;
+}
+.scanning .dots::after {
+  content: '';
+  animation: dots 1.4s steps(4, end) infinite;
+}
+@keyframes dots {
+  0% { content: ''; } 25% { content: '·'; } 50% { content: '··'; } 75% { content: '···'; }
+}
 
 .json-receipt {
   max-height: 30rem;

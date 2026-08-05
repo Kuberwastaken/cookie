@@ -116,6 +116,15 @@ export class Dossier {
     return el;
   }
 
+  /** A live "scanning…" placeholder shown while slow probes run. Caller removes it. */
+  scanning(text: string): HTMLElement {
+    const el = document.createElement('section');
+    el.className = 'act';
+    el.innerHTML = `<p class="scanning">${escape(text)}<span class="dots"></span></p>`;
+    this.root.append(el);
+    return el;
+  }
+
   /**
    * The interactive typing step. Shows a target sentence and an input; resolves
    * with the input element (whose keystrokes a probe has been recording) once
@@ -137,26 +146,45 @@ export class Dossier {
       input.autocapitalize = 'off';
       input.spellcheck = false;
       input.setAttribute('aria-label', 'Type the sentence above');
+
+      const hint = document.createElement('p');
+      hint.className = 'type-hint';
+      hint.textContent = 'Keep going…';
+
+      const done = document.createElement('button');
+      done.className = 'go';
+      done.textContent = 'Read my typing';
+      done.style.marginTop = '1rem';
+      done.disabled = true;
+
       const skip = document.createElement('button');
       skip.className = 'go ghost';
       skip.textContent = 'Skip this';
-      skip.style.marginTop = '1rem';
+      skip.style.marginLeft = '0.6rem';
 
-      let done = false;
+      let settled = false;
       const finish = (skipped: boolean) => {
-        if (done) return; done = true;
-        input.disabled = true; skip.remove();
+        if (settled) return; settled = true;
+        input.disabled = true; done.remove(); skip.remove();
         resolve({ input: skipped ? null : input, skipped });
       };
+
+      // Never cut the user off — only enable Done once there's enough to analyse.
+      const MIN = 18;
       input.addEventListener('input', () => {
-        // Finish when they've typed roughly the whole thing.
-        if (input.value.length >= Math.min(target.length - 4, 24)) {
-          setTimeout(() => finish(false), 350);
-        }
+        const n = input.value.trim().length;
+        done.disabled = n < MIN;
+        if (n < MIN) { hint.textContent = 'Keep going…'; hint.className = 'type-hint'; }
+        else if (n < target.length - 2) { hint.textContent = 'Enough to read you — finish the line or hit the button.'; hint.className = 'type-hint ready'; }
+        else { hint.textContent = 'Perfect. Press Enter.'; hint.className = 'type-hint ready'; }
       });
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && input.value.trim().length >= MIN) finish(false);
+      });
+      done.addEventListener('click', () => finish(false));
       skip.addEventListener('click', () => finish(true));
 
-      wrap.append(input, skip);
+      wrap.append(input, hint, done, skip);
       this.root.append(wrap);
       input.focus();
     });

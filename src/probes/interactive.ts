@@ -35,6 +35,7 @@ class BehaviorCapture {
   private maxScroll = 0;
   private scrollSamples: Array<{ depth: number; t: number }> = [];
   private backspaces = 0;
+  private tabAways = 0;
   private attached = false;
 
   attach() {
@@ -79,6 +80,11 @@ class BehaviorCapture {
       if (e.key === 'Tab' || e.key === 'Enter' || e.key.startsWith('Arrow')) this.keyboardNavCount++;
       if (e.key === 'Backspace') this.backspaces++;
     }, { passive: true });
+
+    // Every time the tab loses foreground, count it — "you looked away N times."
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') this.tabAways++;
+    });
 
     addEventListener('scroll', () => {
       const max = document.documentElement.scrollHeight - innerHeight;
@@ -172,6 +178,7 @@ class BehaviorCapture {
       sig('bhv.keyboardNav', 'Keyboard navigations', this.keyboardNavCount),
       sig('bhv.pointerNav', 'Pointer navigations', this.pointerNavCount),
       sig('bhv.backspaces', 'Corrections (backspaces)', this.backspaces),
+      sig('bhv.tabAways', 'Times you looked away', this.tabAways),
       sig('bhv.keyboardOnly', 'Keyboard-only navigation',
         this.keyboardNavCount > 3 && this.pointerNavCount === 0),
     ];

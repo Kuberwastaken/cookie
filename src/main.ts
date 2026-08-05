@@ -16,6 +16,7 @@ import { liesProbe } from './probes/lies';
 import { automationProbe } from './probes/automation';
 import { incognitoProbe } from './probes/incognito';
 import { cpuArchProbe, mathProbe, applePayProbe, mathmlProbe } from './probes/deep';
+import { metaProbe } from './probes/meta';
 import { behaviorCapture } from './probes/interactive';
 import { localNetProbe } from './probes/localnet';
 import { appsProbe } from './probes/apps';
@@ -27,7 +28,7 @@ const PASSIVE = [
   platformProbe, displayProbe, hardwareProbe, environmentProbe, codecProbe, voiceProbe,
   gpuProbe, canvasProbe, audioProbe, domRectProbe, fontProbe,
   liesProbe, automationProbe, incognitoProbe,
-  cpuArchProbe, mathProbe, applePayProbe, mathmlProbe,
+  cpuArchProbe, mathProbe, applePayProbe, mathmlProbe, metaProbe,
 ];
 const INVASIVE = [localNetProbe, appsProbe, extProbe, webrtcProbe, permissionProbe];
 
@@ -84,8 +85,9 @@ async function main() {
     recall(),
   ]);
 
-  // Acts 1–5: the passive dossier.
-  for (const c of inferAll(signals)) await dossier.reveal(c, signals);
+  // Acts 1–5: the passive dossier. Act 6+ claims wait for the gate / later acts,
+  // even when their underlying signal was gathered passively.
+  for (const c of inferAll(signals).filter((c) => c.act < 6)) await dossier.reveal(c, signals);
 
   // Act 6: the invasive gate.
   const consent = await dossier.gate(
@@ -94,8 +96,10 @@ async function main() {
   );
 
   if (consent) {
+    const scan = dossier.scanning('Scanning your machine — open ports, real IP, granted permissions, paired devices');
     const invasive = await runProbes(INVASIVE, { consented: true, signal: controller.signal });
     Object.assign(signals, invasive);
+    scan.remove();
     const invasiveClaims = inferAll(signals).filter((c) => c.act === 6);
     if (invasiveClaims.length) {
       for (const c of invasiveClaims) await dossier.reveal(c, signals);

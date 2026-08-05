@@ -75,6 +75,18 @@ export function behavioralClaims(s: SignalMap): Claim[] {
     }));
   }
 
+  // Tab-away count — passive attention tracking.
+  const tabAways = num(s, 'bhv.tabAways');
+  if (tabAways != null && tabAways >= 2) {
+    out.push(claim({
+      id: 'pf.tabaway',
+      text: `You've looked away and come back *${tabAways} times* while this was open. We counted.`,
+      confidence: 'certain', act: 7, weight: 3,
+      evidence: ['bhv.tabAways'],
+      how: `The Page Visibility API tells any site the exact moment you switch tabs or apps, and when you return. Every site you leave open is quietly counting how often it holds your attention.`,
+    }));
+  }
+
   // Hesitation → soft "stress" framing, explicitly hedged.
   const hes = num(s, 'bhv.hesitationMs');
   if (hes != null && hes > 900) {

@@ -5,6 +5,7 @@ import { softwareFromFonts, osFromFonts, languagePacks, codecInference } from '.
 import { localServices, installedApps, extensions } from './invasive';
 import { lieDetection, automation } from './identity';
 import { webrtcClaims, permissionClaims, deepClaims } from './network';
+import { trackingHypocrisy, batteryState, sessionMeta } from './session';
 
 /** Every stateless inference. Stateful ones (return visit, verdict, behavioural,
  *  ad-profile) are called directly by main.ts because they need extra context
@@ -15,13 +16,13 @@ const INFERENCES: Inference[] = [
   // act 2 — software/OS/CPU
   osFromFonts, deepClaims,
   // act 3 — device
-  deviceModel, gpuTier, displayInference, peripherals, codecInference,
+  deviceModel, gpuTier, displayInference, peripherals, codecInference, batteryState,
   // act 4 — contradictions
-  vpnContradiction, lieDetection, automation,
+  vpnContradiction, lieDetection, automation, trackingHypocrisy,
   // act 5 — installed software
   softwareFromFonts, languagePacks,
-  // act 6 — invasive (network/permissions/local)
-  localServices, installedApps, extensions, webrtcClaims, permissionClaims,
+  // act 6 — invasive (network/permissions/local/session)
+  localServices, installedApps, extensions, webrtcClaims, permissionClaims, sessionMeta,
 ];
 
 /** Run every inference and return claims sorted into reveal order. */
