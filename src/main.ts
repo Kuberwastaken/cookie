@@ -1,6 +1,8 @@
 import type { EdgeContext, Signal, SignalMap } from './types';
 import { runProbes } from './runner';
 import { Dossier } from './ui/dossier';
+import { runIntro } from './ui/intro';
+import { buildIntroSegments } from './ui/intro-script';
 import { recall, forget, markTyped, type Visit } from './persist';
 import {
   inferAll, returnVisit, verdict,
@@ -106,21 +108,22 @@ async function main() {
   // Start watching behaviour immediately, so it accumulates through the whole visit.
   behaviorCapture.attach();
 
-  await dossier.boot();
+  // Gather passive signals in the background while the intro types — the static
+  // narration buys the ~1-3s the probes need before we narrate your specs.
+  const signals: SignalMap = {};
+  const gather = (async () => {
+    await loadEdge(signals);
+    Object.assign(signals, await runProbes(PASSIVE, { consented: false, signal: controller.signal }));
+  })();
+  const visitP = recall();
 
-  const [signals, visit] = await Promise.all([
-    (async () => {
-      const s: SignalMap = {};
-      await loadEdge(s);
-      const gathered = await runProbes(PASSIVE, { consented: false, signal: controller.signal });
-      return Object.assign(s, gathered);
-    })(),
-    recall(),
-  ]);
+  // The cinematic intro. Ends by handing off to the dossier below.
+  await runIntro(root, buildIntroSegments(signals, gather));
+  await gather;
+  const visit = await visitP;
 
-  // Acts 1–5: the passive dossier. Act 6+ claims wait for the gate / later acts,
-  // even when their underlying signal was gathered passively.
-  for (const c of inferAll(signals).filter((c) => c.act < 6)) await dossier.reveal(c, signals);
+  // Acts 1–5: the dossier proper (the intro already covered act 0's hook/specs).
+  for (const c of inferAll(signals).filter((c) => c.act >= 1 && c.act < 6)) await dossier.reveal(c, signals);
 
   // Act 6: the invasive probes run automatically — no gate. The whole thesis is
   // that sites do this WITHOUT asking, so we do too, and say so out loud.

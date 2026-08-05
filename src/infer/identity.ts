@@ -75,7 +75,7 @@ export const lieDetection: Inference = (s) => {
   if (litter.length >= 3) {
     out.push(claim({
       id: 'lie.litter',
-      text: `Your extensions leave *litter* in the page — ${litter.length} global variables that a clean browser doesn't have.`,
+      text: `Oh, and your extensions leave *litter* all over the page — ${litter.length} global variables a clean browser doesn't have. You might as well be carrying a bright red balloon around the internet.`,
       confidence: 'likely', act: 4, weight: 5,
       evidence: ['lies.clientLitter'],
       how: `We compared your window object against a pristine one inside a nested iframe your extensions can't reach. The extra globals (${litter.slice(0, 3).join(', ')}…) were injected by extensions running right now.`,

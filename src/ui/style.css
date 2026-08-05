@@ -40,6 +40,64 @@ body {
 a, a:link { color: var(--blue); }
 a:visited { color: #551a8b; }
 
+/* ---------- cinematic intro ---------- */
+
+.intro {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.5rem;
+  z-index: 20;
+  text-align: center;
+}
+.intro-line {
+  font-family: var(--mono);
+  font-size: clamp(1.35rem, 5vw, 2.5rem);
+  line-height: 1.35;
+  font-weight: bold;
+  color: var(--ink);
+  max-width: 34rem;
+  margin: 0;
+  min-height: 2.6em;
+}
+.intro-cursor {
+  display: inline-block;
+  width: 0.55ch;
+  height: 1.05em;
+  background: var(--ink);
+  margin-left: 2px;
+  vertical-align: -0.15em;
+  animation: introblink 1s steps(1) infinite;
+}
+@keyframes introblink { 50% { opacity: 0; } }
+.intro-hint {
+  position: fixed;
+  bottom: 2rem;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--faint);
+  margin: 0;
+}
+.intro-skip {
+  position: fixed;
+  top: 1.1rem;
+  right: 1.2rem;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--faint);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  text-decoration: underline;
+}
+@media (prefers-reduced-motion: reduce) {
+  .intro-cursor { animation: none; }
+}
+
 /* ---------- boot cursor ---------- */
 
 .boot { font-family: var(--mono); font-size: 1rem; color: var(--ink); }

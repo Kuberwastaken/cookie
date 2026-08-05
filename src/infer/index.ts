@@ -5,15 +5,13 @@ import { softwareFromFonts, osFromFonts, languagePacks, codecInference } from '.
 import { localServices, extensions } from './invasive';
 import { lieDetection, automation } from './identity';
 import { webrtcClaims, permissionClaims, deepClaims } from './network';
-import { trackingHypocrisy, batteryState, sessionMeta } from './session';
-import { deviceHook, referrerHook } from './hook';
+import { trackingHypocrisy, batteryState, sessionMeta, loginDetectionDead } from './session';
 
 /** Every stateless inference. Stateful ones (return visit, verdict, behavioural,
  *  ad-profile) are called directly by main.ts because they need extra context
  *  or run at a specific point in the narrative. */
 const INFERENCES: Inference[] = [
-  // act 0 — referrer (fourth-wall opener), then the device judgement
-  referrerHook, deviceHook,
+  // (act 0 — the referrer + device hook now live in the cinematic intro)
   // act 1 — location
   geolocation, coloTriangulation, localTimeBeat, handshake,
   // act 2 — software/OS/CPU
@@ -21,7 +19,7 @@ const INFERENCES: Inference[] = [
   // act 3 — device
   deviceModel, gpuTier, displayInference, multiMonitor, peripherals, codecInference, batteryState,
   // act 4 — contradictions
-  vpnContradiction, lieDetection, automation, trackingHypocrisy,
+  vpnContradiction, lieDetection, automation, trackingHypocrisy, loginDetectionDead,
   // act 5 — installed software
   softwareFromFonts, languagePacks,
   // act 6 — invasive (network/permissions/local/session).

@@ -42,6 +42,21 @@ export const batteryState: Inference = (s) => {
   })];
 };
 
+/**
+ * The one honest piece of good news — a rare "this got better" beat. Login
+ * detection genuinely died around 2020 (SameSite cookies), so we say so rather
+ * than fake a "you're logged into X" moment that would be all false positives.
+ */
+export const loginDetectionDead: Inference = () => {
+  return [{
+    id: 'ses.logindead',
+    text: `Ten years ago I could have listed every site you're logged into right now — Gmail, GitHub, your bank. Browsers finally *killed that trick* around 2020. It's the one thing on this page that actually got better.`,
+    confidence: 'certain', act: 4, weight: 2,
+    evidence: [],
+    how: `The attack loaded a login-only image from each site and watched whether it loaded. It worked because your session cookie rode along on that cross-site request. Then browsers made cookies "SameSite=Lax" by default, so they no longer do — and the endpoints that leaked got locked down. We checked in 2026: it's dead across the board. Enjoy this rare win.`,
+  }];
+};
+
 /** DevTools open + free disk — the developer-audience "gotcha." — act 6. */
 export const sessionMeta: Inference = (s) => {
   const out: Claim[] = [];
