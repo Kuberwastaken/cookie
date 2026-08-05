@@ -137,7 +137,14 @@ async function main() {
     for (const c of invasiveClaims) await dossier.reveal(c, signals);
   }
 
-  // Act 7: who you are (behavioural). Typing is recorded from the first key.
+  // What you're worth (the ad-profile receipt).
+  dossier.adReceipt(buildBidRequest(signals), pixelCookies());
+
+  // We've met before (return visit).
+  for (const c of returnVisit(visit)) await dossier.reveal(c, signals);
+
+  // The interactive typing "speed test" lives down here on purpose — the whole
+  // passive read stays smooth, and the one interactive beat lands near the end.
   const typedBefore = visit.typed;
   const typing = await dossier.typingPrompt(TYPING_TARGET);
   if (!typing.skipped && typing.events.length) {
@@ -153,12 +160,6 @@ async function main() {
     ...personalityTheatre(signals),
   ].sort((a, b) => a.weight - b.weight);
   for (const c of profile) await dossier.reveal(c, signals);
-
-  // Act 8: what you're worth (the ad-profile receipt).
-  dossier.adReceipt(buildBidRequest(signals), pixelCookies());
-
-  // Act 9: return visit.
-  for (const c of returnVisit(visit)) await dossier.reveal(c, signals);
 
   // The rarity funnel — how fast common attributes compound into uniqueness.
   await dossier.rarityFunnel(rarityFunnel(signals).rows);

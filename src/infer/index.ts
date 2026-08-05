@@ -5,7 +5,7 @@ import { softwareFromFonts, osFromFonts, languagePacks, codecInference } from '.
 import { localServices, extensions } from './invasive';
 import { lieDetection, automation } from './identity';
 import { webrtcClaims, permissionClaims, deepClaims } from './network';
-import { trackingHypocrisy, batteryState, sessionMeta, loginDetectionDead } from './session';
+import { trackingHypocrisy, batteryState, sessionMeta } from './session';
 
 /** Every stateless inference. Stateful ones (return visit, verdict, behavioural,
  *  ad-profile) are called directly by main.ts because they need extra context
@@ -19,7 +19,7 @@ const INFERENCES: Inference[] = [
   // act 3 — device
   deviceModel, gpuTier, displayInference, multiMonitor, peripherals, codecInference, batteryState,
   // act 4 — contradictions
-  vpnContradiction, lieDetection, automation, trackingHypocrisy, loginDetectionDead,
+  vpnContradiction, lieDetection, automation, trackingHypocrisy,
   // act 5 — installed software
   softwareFromFonts, languagePacks,
   // act 6 — invasive (network/permissions/local/session).

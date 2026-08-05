@@ -14,11 +14,11 @@ export function buildIntroSegments(signals: SignalMap, gather: Promise<unknown>)
 
   segments.push(
     'Hi.',
-    'For years, everyone online has known the deal: websites can fingerprint you. Identify you. Follow you around.',
-    "So we decline the cookie banners. We hunt for the 'reject all' button. We feel a little safer.",
+    'For years, everyone online has known the deal: websites can *fingerprint* you. Identify you. Follow you around.',
+    "So we decline the cookie banners. We hunt for the *reject all* button. We feel a little safer.",
     'I have some bad news.',
-    "Modern browsers don't really need the cookie anymore.",
-    'This page set none. It asked for zero permissions. You have clicked nothing.',
+    "Modern browsers don't really *need the cookie* anymore.",
+    'This page set *none*. It asked for *zero permissions*. You have clicked *nothing*.',
     'And yet.',
   );
 
@@ -59,7 +59,7 @@ function specLines(s: SignalMap): string[] {
   const { headline, expensive } = deviceHeadline(ua, gpuL, str('platform.model'), res);
 
   const out: string[] = [];
-  out.push(`Nice machine, by the way. ${headline}.`);
+  out.push(`Nice machine, by the way. *${headline}*.`);
 
   // Assemble the spec brag from whatever we actually measured.
   const bits: string[] = [];
