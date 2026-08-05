@@ -101,7 +101,27 @@ const cacheApi = {
   async del() { try { await caches.delete(CACHE); } catch { /* ignore */ } },
 };
 
-const BACKENDS = [local, session, indexed, cacheApi];
+/**
+ * window.name survives navigation within a tab and is NOT cleared by "clear
+ * cookies and site data" — one of the last evercookie backends still standing
+ * in 2026, and almost no privacy tool covers it. We tuck the tag into a JSON
+ * wrapper so we don't clobber a value another site legitimately set.
+ */
+const NAME_PREFIX = 'nc::';
+const windowName = {
+  name: 'window.name',
+  async get(): Promise<string | null> {
+    try {
+      const n = window.name;
+      if (n.startsWith(NAME_PREFIX)) return n.slice(NAME_PREFIX.length);
+      return null;
+    } catch { return null; }
+  },
+  async set(v: string) { try { window.name = NAME_PREFIX + v; } catch { /* ignore */ } },
+  async del() { try { if (window.name.startsWith(NAME_PREFIX)) window.name = ''; } catch { /* ignore */ } },
+};
+
+const BACKENDS = [local, session, indexed, cacheApi, windowName];
 
 // ---- public API -----------------------------------------------------------
 
