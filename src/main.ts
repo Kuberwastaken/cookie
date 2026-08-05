@@ -38,7 +38,9 @@ const TYPING_TARGET = 'the quick brown fox jumps over the lazy dog';
 async function loadEdge(signals: SignalMap): Promise<void> {
   try {
     const res = await fetch('/api/context', { headers: { accept: 'application/json' } });
-    if (!res.ok) return;
+    // 404 on a static host (GitHub Pages) is fine — we fall through to the
+    // client-side geo lookup below. Only parse when the edge function answered.
+    if (res.ok) {
     const ctx = (await res.json()) as EdgeContext & Record<string, unknown>;
     const put = (id: string, label: string, value: unknown) => {
       if (value != null && value !== '') signals[id] = { id, label, value };
@@ -61,6 +63,7 @@ async function loadEdge(signals: SignalMap): Promise<void> {
     put('edge.acceptLanguage', 'Accept-Language', ctx.acceptLanguage);
     put('edge.headerOrder', 'Header order', ctx.headerOrder);
     put('edge.clientHints', 'Client hints', ctx.clientHints);
+    }
   } catch { /* dev without the function, or offline — the page still works client-side */ }
 
   // On a static host (GitHub Pages) there's no edge function, so fall back to a
