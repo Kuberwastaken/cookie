@@ -16,6 +16,23 @@ export const metaProbe: Probe = {
   async run() {
     const out: Signal[] = [];
 
+    // --- Where you came from (nobody reads this, and it's right there) ---
+    try {
+      const ref = document.referrer || '';
+      out.push(sig('nav.referrer', 'Referrer', ref || '(none — typed in or bookmarked)'));
+      if (ref) {
+        try { out.push(sig('nav.referrerHost', 'Came from', new URL(ref).hostname, { entropy: 2 })); }
+        catch { /* malformed referrer */ }
+      }
+    } catch { /* ignore */ }
+
+    // --- Multiple monitors (no permission on Chrome) ---
+    try {
+      if ('isExtended' in screen) {
+        out.push(sig('meta.multiMonitor', 'Multiple screens', (screen as Screen & { isExtended?: boolean }).isExtended === true));
+      }
+    } catch { /* ignore */ }
+
     // --- DevTools detection (heuristic, hedge accordingly) ---
     // 1) A docked panel shrinks the viewport well below the window size.
     let bySize = false;

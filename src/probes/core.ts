@@ -195,6 +195,7 @@ export const environmentProbe: Probe = {
       sig('env.currency', 'Inferred currency format',
         new Intl.NumberFormat(undefined, { style: 'currency', currency: 'USD' }).format(1234.5)),
       sig('env.localTime', 'Local time', new Date().toString()),
+      sig('env.hour', 'Local hour (0-23)', new Date().getHours()),
 
       sig('env.colorScheme', 'Prefers colour scheme', mq('(prefers-color-scheme: dark)') ? 'dark' : 'light'),
       sig('env.reducedMotion', 'Prefers reduced motion', mq('(prefers-reduced-motion: reduce)'), { entropy: 1 }),

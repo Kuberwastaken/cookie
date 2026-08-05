@@ -22,6 +22,35 @@ function hook(text: string, how: string, evidence: string[]): Claim {
   return { id: 'hook.device', text, confidence: 'guess', act: 0, weight: 10, evidence, how };
 }
 
+/** Where you came from — the fourth-wall opener, before the device judgement. */
+const REFERRERS: Array<{ match: RegExp; text: string }> = [
+  { match: /news\.ycombinator\.com/, text: `You came from *Hacker News*. Hi. Yes — this is the part of the demo that already knows that.` },
+  { match: /lobste\.rs/, text: `You came from *Lobsters*. Good taste.` },
+  { match: /reddit\.com|redd\.it/, text: `You came from *Reddit*. Which sub, though. We can guess.` },
+  { match: /(twitter|x)\.com|t\.co/, text: `You came from *X*. Someone tweeted this at you, didn't they.` },
+  { match: /facebook\.com|fb\./, text: `You came from *Facebook*. Bold, still being there.` },
+  { match: /linkedin\.com|lnkd\.in/, text: `You came from *LinkedIn*. Networking, are we.` },
+  { match: /youtube\.com|youtu\.be/, text: `You came from *YouTube*. A video sent you. We'd love to know which.` },
+  { match: /github\.com/, text: `You came from *GitHub*. So you're one of us. You'll enjoy the source.` },
+  { match: /producthunt\.com/, text: `You came from *Product Hunt*. Hello, early adopter.` },
+  { match: /google\./, text: `You came from a *Google search*. What did you type to land here?` },
+  { match: /bing\.com|duckduckgo\.com/, text: `You came from a *search engine* — the good kind, apparently.` },
+  { match: /t\.me|telegram/, text: `You came from *Telegram*. Someone forwarded you.` },
+  { match: /mastodon|\.social/, text: `You came from the *fediverse*. Respect.` },
+];
+
+export const referrerHook: Inference = (s) => {
+  const host = str(s, 'nav.referrerHost');
+  if (!host) return [];
+  const known = REFERRERS.find((r) => r.match.test(host));
+  const text = known ? known.text : `You came from *${host}*.`;
+  return [{
+    id: 'hook.referrer', text, confidence: 'certain', act: 0, weight: 0,
+    evidence: ['nav.referrerHost', 'nav.referrer'],
+    how: `Every link you click sends the page you left in the Referer header, and document.referrer hands it to any script. Almost nobody reads it. We read it first, before anything else — which is why this is the opening line.`,
+  }];
+};
+
 export const deviceHook: Inference = (s) => {
   const ua = str(s, 'platform.ua');
   const gpu = str(s, 'gpu.renderer').toLowerCase();

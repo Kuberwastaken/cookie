@@ -120,6 +120,69 @@ function fmtOffset(min: number): string {
   return `UTC${sign}${String(Math.floor(a / 60)).padStart(2, '0')}:${String(a % 60).padStart(2, '0')}`;
 }
 
+/** The local-time emotional beat — measured, never usually spoken aloud. */
+export const localTimeBeat: Inference = (s) => {
+  const hour = s['env.hour']?.value;
+  if (typeof hour !== 'number') return [];
+  const local = str(s, 'env.localTime') || '';
+  const m = local.match(/(\d{1,2}):(\d{2})/);
+  const clock = m ? to12h(+m[1], m[2]) : `${hour}:00`;
+
+  if (hour >= 0 && hour <= 4) {
+    return [claim({
+      id: 'loc.time',
+      text: `It's *${clock}* where you are. You should be asleep. We won't tell anyone — but your device just did.`,
+      confidence: 'certain', act: 1, weight: 6,
+      evidence: ['env.localTime', 'env.hour'],
+      how: `Your clock is set locally and your browser reports it freely. Right now it reads ${clock}. Time-of-day is one of the quietest things a site learns about you, and one of the most telling.`,
+    })];
+  }
+  if (hour === 5 || hour === 6) {
+    return [claim({
+      id: 'loc.time',
+      text: `It's *${clock}* where you are — either you're up early, or you never went to bed.`,
+      confidence: 'certain', act: 1, weight: 5,
+      evidence: ['env.localTime', 'env.hour'],
+      how: `Your browser reports your exact local time (${clock}). We didn't ask; it just tells any page that loads.`,
+    })];
+  }
+  return [];
+};
+
+/** Cloudflare colo + TCP RTT → a network-only location fix. (Cloudflare deploy only.) */
+export const coloTriangulation: Inference = (s) => {
+  const colo = str(s, 'edge.colo');
+  const city = colo ? COLO[colo] : undefined;
+  if (!colo || !city) return [];
+  const rtt = s['edge.tcpRtt']?.value;
+  const rttStr = typeof rtt === 'number' ? `, about *${rtt} ms* away` : '';
+  return [claim({
+    id: 'loc.colo',
+    text: `At the network level, you reached us through *${city}*${rttStr}. That's a location fix your IP can't fake — it's measured, not claimed.`,
+    confidence: 'likely', act: 1, weight: 4,
+    evidence: ['edge.colo', 'edge.tcpRtt'],
+    how: `You connected through the ${colo} datacenter, and the round-trip time bounds how far you physically are from it. A VPN can move your apparent IP, but it can't make packets travel faster than light — so this corroborates (or contradicts) where you say you are.`,
+  })];
+};
+
+// Common Cloudflare edge locations (IATA code → city).
+const COLO: Record<string, string> = {
+  FRA: 'Frankfurt', LHR: 'London', CDG: 'Paris', AMS: 'Amsterdam', MAD: 'Madrid',
+  MXP: 'Milan', ARN: 'Stockholm', WAW: 'Warsaw', VIE: 'Vienna', ZRH: 'Zurich',
+  DUB: 'Dublin', EWR: 'Newark', IAD: 'Ashburn', ORD: 'Chicago', DFW: 'Dallas',
+  LAX: 'Los Angeles', SJC: 'San Jose', SEA: 'Seattle', ATL: 'Atlanta', MIA: 'Miami',
+  YYZ: 'Toronto', GRU: 'São Paulo', SCL: 'Santiago', NRT: 'Tokyo', KIX: 'Osaka',
+  ICN: 'Seoul', SIN: 'Singapore', HKG: 'Hong Kong', BOM: 'Mumbai', DEL: 'Delhi',
+  MAA: 'Chennai', BLR: 'Bengaluru', SYD: 'Sydney', MEL: 'Melbourne', JNB: 'Johannesburg',
+  DXB: 'Dubai', TLV: 'Tel Aviv', IST: 'Istanbul', CPT: 'Cape Town',
+};
+
+function to12h(h: number, min: string): string {
+  const ampm = h >= 12 ? 'p.m.' : 'a.m.';
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${h12}:${min} ${ampm}`;
+}
+
 /** TLS/HTTP fingerprint captured during the handshake, before any JS. */
 export const handshake: Inference = (s) => {
   const tls = str(s, 'edge.tlsVersion');

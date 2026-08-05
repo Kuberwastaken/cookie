@@ -1,25 +1,25 @@
 import type { Claim, Inference, SignalMap } from '../types';
-import { deviceModel, gpuTier, displayInference, peripherals } from './device';
-import { geolocation, vpnContradiction, handshake } from './location';
+import { deviceModel, gpuTier, displayInference, peripherals, multiMonitor } from './device';
+import { geolocation, vpnContradiction, handshake, localTimeBeat, coloTriangulation } from './location';
 import { softwareFromFonts, osFromFonts, languagePacks, codecInference } from './software';
 import { localServices, extensions } from './invasive';
 import { lieDetection, automation } from './identity';
 import { webrtcClaims, permissionClaims, deepClaims } from './network';
 import { trackingHypocrisy, batteryState, sessionMeta } from './session';
-import { deviceHook } from './hook';
+import { deviceHook, referrerHook } from './hook';
 
 /** Every stateless inference. Stateful ones (return visit, verdict, behavioural,
  *  ad-profile) are called directly by main.ts because they need extra context
  *  or run at a specific point in the narrative. */
 const INFERENCES: Inference[] = [
-  // act 0 — the opening device-judgement hook
-  deviceHook,
+  // act 0 — referrer (fourth-wall opener), then the device judgement
+  referrerHook, deviceHook,
   // act 1 — location
-  geolocation, handshake,
+  geolocation, coloTriangulation, localTimeBeat, handshake,
   // act 2 — software/OS/CPU
   osFromFonts, deepClaims,
   // act 3 — device
-  deviceModel, gpuTier, displayInference, peripherals, codecInference, batteryState,
+  deviceModel, gpuTier, displayInference, multiMonitor, peripherals, codecInference, batteryState,
   // act 4 — contradictions
   vpnContradiction, lieDetection, automation, trackingHypocrisy,
   // act 5 — installed software

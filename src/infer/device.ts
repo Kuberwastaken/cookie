@@ -103,6 +103,18 @@ export const gpuTier: Inference = (s) => {
   return out;
 };
 
+/** Multiple monitors, detected with no permission (Chrome's screen.isExtended). */
+export const multiMonitor: Inference = (s) => {
+  if (s['meta.multiMonitor']?.value !== true) return [];
+  return [claim({
+    id: 'device.screens',
+    text: `You're running *more than one screen*.`,
+    confidence: 'certain', act: 3, weight: 4,
+    evidence: ['meta.multiMonitor'],
+    how: `screen.isExtended returns true when a second display is attached — no permission prompt, just a boolean any site can read. It doesn't say what's on the other screen. Yet.`,
+  })];
+};
+
 /** Refresh rate → ProMotion / gaming-monitor inference. */
 export const displayInference: Inference = (s) => {
   const hz = num(s, 'display.refreshHz');

@@ -56,6 +56,7 @@ async function loadEdge(signals: SignalMap): Promise<void> {
     put('edge.asn', 'ASN', ctx.asn);
     put('edge.asOrg', 'Network operator', ctx.asOrganization);
     put('edge.colo', 'Edge datacenter', ctx.colo);
+    put('edge.tcpRtt', 'TCP round-trip (ms)', (ctx as Record<string, unknown>).clientTcpRtt);
     put('edge.tlsVersion', 'TLS version', ctx.tlsVersion);
     put('edge.tlsCipher', 'TLS cipher', ctx.tlsCipher);
     put('edge.tlsHelloLength', 'ClientHello length', ctx.tlsClientHelloLength);
@@ -129,7 +130,7 @@ async function main() {
   scan.remove();
   const invasiveClaims = inferAll(signals).filter((c) => c.act === 6);
   if (invasiveClaims.length) {
-    dossier.section('<p class="claim likely" style="opacity:1;transform:none;color:#fff">Now the louder stuff — and notice we never asked you. Neither will anyone else.</p>');
+    dossier.section('<p class="claim likely">Now the louder stuff — and notice we never asked you. Neither will anyone else.</p>');
     for (const c of invasiveClaims) await dossier.reveal(c, signals);
   }
 
