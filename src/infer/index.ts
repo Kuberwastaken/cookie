@@ -43,6 +43,6 @@ export function sortClaims(claims: Claim[]): Claim[] {
 }
 
 export { returnVisit, verdict } from './identity';
-export { behavioralClaims, typingClaims, personalityTheatre } from './profile';
+export { behavioralClaims, typingClaims, personalityTheatre, repeatTyping } from './profile';
 export { buildBidRequest, pixelCookies } from './adprofile';
 export { rarityFunnel } from './rarity';

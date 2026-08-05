@@ -20,11 +20,15 @@ export interface Visit {
   id: string;
   first: number;
   count: number;
+  /** how many times this browser has completed the typing test before */
+  typed: number;
   /** which backends still held a copy when we arrived */
   survivors: string[];
   /** backends that had been wiped and which we just restored */
   restored: string[];
 }
+
+interface Stored { id: string; first: number; count: number; typed?: number; }
 
 function newId(): string {
   const b = new Uint8Array(8);
@@ -133,24 +137,39 @@ export async function recall(): Promise<Visit> {
   const survivors = found.filter((f) => f.raw).map((f) => f.backend.name);
   const restored = found.filter((f) => !f.raw).map((f) => f.backend.name);
 
-  let record: { id: string; first: number; count: number } | null = null;
+  let record: Stored | null = null;
   for (const f of found) {
     if (!f.raw) continue;
     try {
-      const parsed = JSON.parse(f.raw);
+      const parsed = JSON.parse(f.raw) as Stored;
       if (parsed?.id) { record = parsed; break; }
     } catch { /* corrupt copy, try the next backend */ }
   }
 
   const visit: Visit = record
-    ? { ...record, count: record.count + 1, survivors, restored }
-    : { id: newId(), first: Date.now(), count: 1, survivors: [], restored: [] };
+    ? { ...record, typed: record.typed ?? 0, count: record.count + 1, survivors, restored }
+    : { id: newId(), first: Date.now(), count: 1, typed: 0, survivors: [], restored: [] };
 
-  // Re-seed every backend, including the ones that had been wiped.
-  const payload = JSON.stringify({ id: visit.id, first: visit.first, count: visit.count });
-  await Promise.all(BACKENDS.map((b) => b.set(payload)));
-
+  await writeAll({ id: visit.id, first: visit.first, count: visit.count, typed: visit.typed });
   return visit;
+}
+
+async function writeAll(rec: Stored): Promise<void> {
+  const payload = JSON.stringify(rec);
+  await Promise.all(BACKENDS.map((b) => b.set(payload)));
+}
+
+/** Record that the visitor just completed the typing test, across all backends. */
+export async function markTyped(): Promise<void> {
+  const found = await Promise.all(BACKENDS.map((b) => b.get()));
+  let rec: Stored | null = null;
+  for (const raw of found) {
+    if (!raw) continue;
+    try { const p = JSON.parse(raw) as Stored; if (p?.id) { rec = p; break; } } catch { /* skip */ }
+  }
+  if (!rec) return;
+  rec.typed = (rec.typed ?? 0) + 1;
+  await writeAll(rec);
 }
 
 export async function forget(): Promise<void> {

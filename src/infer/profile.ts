@@ -144,6 +144,19 @@ export function typingClaims(s: SignalMap): Claim[] {
   return out;
 }
 
+/** "You've done this before" — the cheeky callback when they retype. */
+export function repeatTyping(timesBefore: number): Claim[] {
+  if (timesBefore < 1) return [];
+  const nth = timesBefore + 1;
+  return [claim({
+    id: 'pf.repeat',
+    text: `Also — you've *done this typing test before*. This is time number *${nth}*. We remember. It's honestly just fun watching you do it again.`,
+    confidence: 'certain', act: 7, weight: 8,
+    evidence: [],
+    how: `We tucked a note away the first time you typed — not in a cookie (you'd have cleared that), but across localStorage, IndexedDB, the Cache API and window.name at once. Clearing your cookies didn't touch it. So we knew the moment you started typing that you'd been here before.`,
+  })];
+}
+
 /**
  * The OCEAN readout — the demo's thesis made literal. We generate a Big Five
  * profile from a single session, then immediately admit it's astrology. The

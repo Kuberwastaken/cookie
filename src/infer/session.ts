@@ -46,6 +46,16 @@ export const batteryState: Inference = (s) => {
 export const sessionMeta: Inference = (s) => {
   const out: Claim[] = [];
 
+  if (s['incognito.private']?.value === true) {
+    out.push(claim({
+      id: 'ses.incognito',
+      text: `Oh — you're in a *private / incognito window*. You thought that would change what we can see. It changed *nothing*. Cute.`,
+      confidence: 'guess', act: 6, weight: 7,
+      evidence: ['incognito.private', 'incognito.method'],
+      how: `Incognito only stops your own browser from saving history and cookies to disk. It doesn't touch your IP, your GPU, your fonts, your screen, or a single thing on this page — all of which worked exactly the same. We spotted the private mode from how the storage API behaves, and carried on regardless.`,
+    }));
+  }
+
   if (s['meta.devtools']?.value === true) {
     out.push(claim({
       id: 'ses.devtools',

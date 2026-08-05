@@ -1,10 +1,10 @@
 import type { EdgeContext, Signal, SignalMap } from './types';
 import { runProbes } from './runner';
 import { Dossier } from './ui/dossier';
-import { recall, forget, type Visit } from './persist';
+import { recall, forget, markTyped, type Visit } from './persist';
 import {
   inferAll, returnVisit, verdict,
-  behavioralClaims, typingClaims, personalityTheatre,
+  behavioralClaims, typingClaims, personalityTheatre, repeatTyping,
   buildBidRequest, pixelCookies, rarityFunnel,
 } from './infer';
 
@@ -134,15 +134,18 @@ async function main() {
   }
 
   // Act 7: who you are (behavioural). Typing is recorded from the first key.
+  const typedBefore = visit.typed;
   const typing = await dossier.typingPrompt(TYPING_TARGET);
   if (!typing.skipped && typing.events.length) {
     Object.assign(signals, keyed(analyzeTyping(typing.events, TYPING_TARGET, typing.value)));
+    await markTyped();
   }
   Object.assign(signals, keyed(behaviorCapture.snapshot()));
 
   const profile = [
     ...behavioralClaims(signals),
     ...typingClaims(signals),
+    ...(typing.skipped ? [] : repeatTyping(typedBefore)),
     ...personalityTheatre(signals),
   ].sort((a, b) => a.weight - b.weight);
   for (const c of profile) await dossier.reveal(c, signals);
@@ -185,7 +188,8 @@ function renderFinale(dossier: Dossier, signals: SignalMap, fingerprint: string,
       Nothing on this page was stored on a server. Everything ran in your browser, or was
       read from the connection itself. The point isn't that this site is creepy — it's that
       the site you visit <i>after</i> this one can do all of it too, and won't tell you.
-      <br><br>Made as a weekend project. It's open source.
+      <br><br>Made as a weekend project while studying fingerprinting. <a href="https://github.com/Kuberwastaken/cookie" target="_blank" rel="noopener">It's open source too.</a>
+      <br>Made with &lt;3 by <a href="https://kuber.studio" target="_blank" rel="noopener">Kuber Mehta</a> (<a href="https://x.com/kuberwastaken" target="_blank" rel="noopener">kuberwastaken</a>)
     </p>
   `);
 

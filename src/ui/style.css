@@ -1,20 +1,20 @@
 /*
- * Two typographic registers, deliberately at odds:
- *   - Claims are large serif. Someone is writing to you.
- *   - Evidence is tiny monospace. A machine is reading you.
- * The gap between those two voices is the entire argument of the page.
+ * Deliberately "unstyled": white page, black serif body text, blue emphasis —
+ * the look of a raw HTML document that never got a stylesheet. No gradients,
+ * no glow, no motion tricks. The plainness is the point; it reads as a machine
+ * stating facts, not a product trying to impress you.
  */
 
 :root {
-  --bg: #08080a;
-  --ink: #ece8e1;
-  --dim: #7d7a75;
-  --faint: #46443f;
-  --rule: #1e1d1c;
-  --alarm: #d4553c;
-  --alarm-dim: #7a3324;
-  --serif: ui-serif, 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
-  --mono: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+  --ink: #000;
+  --bg: #fff;
+  --blue: #0000ee;
+  --grey: #555;
+  --faint: #888;
+  --rule: #cccccc;
+  --box: #f4f4f4;
+  --serif: Times, 'Times New Roman', serif;
+  --mono: 'Courier New', Courier, monospace;
 }
 
 * { box-sizing: border-box; }
@@ -25,294 +25,158 @@ html, body {
   background: var(--bg);
   color: var(--ink);
   font-family: var(--serif);
-  -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
+  font-size: 18px;
+  line-height: 1.5;
 }
 
 body {
-  min-height: 100dvh;
-  display: flex;
-  justify-content: center;
-  padding: clamp(2rem, 8vw, 7rem) clamp(1.15rem, 5vw, 2rem) 10rem;
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 2.5rem 1.25rem 9rem;
 }
 
-#dossier {
-  width: 100%;
-  max-width: 34rem;
-}
+#dossier { width: 100%; }
 
-/* ---------- the cursor that greets you, before anything else ---------- */
+a, a:link { color: var(--blue); }
+a:visited { color: #551a8b; }
 
-.boot {
-  font-family: var(--mono);
-  font-size: 0.95rem;
-  color: var(--dim);
-}
+/* ---------- boot cursor ---------- */
 
+.boot { font-family: var(--mono); font-size: 1rem; color: var(--ink); }
 .caret {
-  display: inline-block;
-  width: 0.55em;
-  height: 1.05em;
-  background: var(--ink);
-  vertical-align: -0.16em;
-  animation: blink 1.05s steps(1) infinite;
+  display: inline-block; width: 0.5em; height: 1em; background: var(--ink);
+  vertical-align: -0.12em;
 }
-
-@keyframes blink { 50% { opacity: 0; } }
 
 /* ---------- acts ---------- */
 
-.act {
-  margin: 0 0 3.25rem;
-}
-
-.act + .act { padding-top: 2.5rem; border-top: 1px solid var(--rule); }
+.act { margin: 0 0 2rem; }
+.act + .act { padding-top: 1.5rem; border-top: 1px solid var(--rule); }
 
 .act-label {
-  font-family: var(--mono);
-  font-size: 0.66rem;
-  letter-spacing: 0.19em;
+  font-weight: bold;
+  font-size: 0.8rem;
   text-transform: uppercase;
-  color: var(--faint);
-  margin: 0 0 1.6rem;
+  letter-spacing: 0.04em;
+  margin: 0 0 1rem;
+  color: var(--ink);
 }
 
 /* ---------- claims ---------- */
 
 .claim {
-  font-size: clamp(1.28rem, 4.2vw, 1.62rem);
-  line-height: 1.42;
-  margin: 0 0 1.15rem;
-  opacity: 0;
-  transform: translateY(6px);
-  animation: rise 0.62s cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
-  text-wrap: pretty;
+  font-size: 1.2rem;
+  line-height: 1.45;
+  margin: 0 0 0.85rem;
 }
 
-@keyframes rise { to { opacity: 1; transform: none; } }
+.claim.likely { color: #000; }
+.claim.guess { color: #333; font-style: italic; }
 
-.claim.likely { color: #c9c4bb; }
-.claim.guess  { color: #9a958c; font-style: italic; }
+/* the blue highlight — this is the only colour on the page besides links */
+.claim em { font-style: normal; font-weight: bold; color: var(--blue); }
 
-/* the invasive act: clean white on black, only the label carries a red tick */
-.act.invasive .claim { color: #ffffff; }
-.act.invasive .act-label { color: var(--dim); }
-.act.invasive .act-label::before { content: '● '; color: var(--alarm); }
-
-.claim em { font-style: normal; color: #fff; box-shadow: inset 0 -0.42em 0 rgba(212, 85, 60, 0.24); }
-
-/* ---------- the "how?" drawer ---------- */
+/* ---------- the "how?" link + drawer ---------- */
 
 .how-toggle {
-  display: inline-block;
-  margin-left: 0.45rem;
-  font-family: var(--mono);
-  font-size: 0.6rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--faint);
+  display: inline;
+  margin-left: 0.35rem;
+  font-family: var(--serif);
+  font-size: 0.95rem;
+  color: var(--blue);
   background: none;
-  border: 1px solid var(--rule);
-  border-radius: 2px;
-  padding: 0.16rem 0.4rem;
+  border: 0;
+  padding: 0;
   cursor: pointer;
-  vertical-align: 0.28em;
-  transition: color 0.15s, border-color 0.15s;
+  text-decoration: underline;
 }
-
-.how-toggle:hover, .how-toggle:focus-visible { color: var(--ink); border-color: var(--dim); }
 
 .how {
   font-family: var(--mono);
-  font-size: 0.72rem;
-  line-height: 1.62;
-  color: var(--dim);
-  border-left: 2px solid var(--rule);
-  padding: 0.15rem 0 0.15rem 0.9rem;
-  margin: -0.35rem 0 1.5rem;
+  font-size: 0.8rem;
+  line-height: 1.55;
+  color: var(--grey);
+  background: var(--box);
+  border-left: 3px solid var(--rule);
+  padding: 0.6rem 0.8rem;
+  margin: 0.2rem 0 1.2rem;
   white-space: pre-wrap;
   overflow-x: auto;
 }
-
-.how b { color: var(--ink); font-weight: 500; }
+.how b { color: var(--ink); font-weight: bold; }
 .how[hidden] { display: none; }
 
-/* ---------- the consent gate ---------- */
-
-.gate {
-  margin: 1rem 0 0;
-  padding: 1.6rem 0 0;
-}
-
-.gate p { font-size: 1.1rem; color: var(--dim); margin: 0 0 1.3rem; }
+/* ---------- buttons (near-default) ---------- */
 
 button.go {
-  font-family: var(--mono);
-  font-size: 0.78rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--bg);
-  background: var(--alarm);
-  border: 0;
-  border-radius: 2px;
-  padding: 0.78rem 1.3rem;
+  font-family: var(--serif);
+  font-size: 1rem;
+  color: var(--ink);
+  background: #eee;
+  border: 1px solid #999;
+  padding: 0.35rem 0.8rem;
   cursor: pointer;
 }
+button.go:hover { background: #e0e0e0; }
+button.go.ghost { background: #fff; }
+button.go:disabled { color: #aaa; border-color: #ccc; cursor: default; }
 
-button.go:hover { filter: brightness(1.12); }
-button.go.ghost { background: none; color: var(--dim); border: 1px solid var(--rule); }
-button.go.ghost:hover { color: var(--ink); border-color: var(--dim); }
-
-/* ---------- the closing summary ---------- */
-
-.verdict {
-  font-size: clamp(1.5rem, 5vw, 1.95rem);
-  line-height: 1.34;
-  margin: 0 0 1.4rem;
-}
-
-.fingerprint {
-  font-family: var(--mono);
-  font-size: clamp(1.4rem, 7vw, 2.3rem);
-  letter-spacing: 0.06em;
-  color: var(--alarm);
-  margin: 1.2rem 0;
-  word-break: break-all;
-}
-
-.raw {
-  font-family: var(--mono);
-  font-size: 0.68rem;
-  line-height: 1.7;
-  color: var(--dim);
-  background: #0d0d10;
-  border: 1px solid var(--rule);
-  border-radius: 3px;
-  padding: 1rem;
-  overflow-x: auto;
-  max-height: 26rem;
-  overflow-y: auto;
-}
-
-.raw td { padding: 0.1rem 0.9rem 0.1rem 0; vertical-align: top; }
-.raw td:first-child { color: var(--faint); white-space: nowrap; }
-.raw table { border-collapse: collapse; }
-
-.footnote {
-  font-family: var(--mono);
-  font-size: 0.72rem;
-  line-height: 1.75;
-  color: var(--faint);
-  margin-top: 3rem;
-}
-
-.footnote a { color: var(--dim); }
-
-/* ---------- interactive typing step ---------- */
+/* ---------- interactive typing ---------- */
 
 .type-target {
   font-family: var(--serif);
-  font-size: 1.25rem;
-  color: #fff;
-  background: #14100f;
-  border-left: 2px solid var(--alarm);
-  padding: 0.7rem 1rem;
-  margin: 1.2rem 0 0.9rem;
-  border-radius: 2px;
+  font-size: 1.15rem;
+  font-style: italic;
+  border-left: 3px solid var(--rule);
+  padding: 0.4rem 0.8rem;
+  margin: 1rem 0 0.8rem;
 }
-
 .type-input {
   width: 100%;
   font-family: var(--mono);
   font-size: 1rem;
   color: var(--ink);
-  background: #0d0d10;
-  border: 1px solid var(--faint);
-  border-radius: 3px;
-  padding: 0.8rem 1rem;
-  outline: none;
+  background: #fff;
+  border: 1px solid #999;
+  padding: 0.5rem 0.7rem;
 }
-.type-input:focus { border-color: var(--alarm); }
-.type-input:disabled { opacity: 0.5; }
+.type-input:focus { outline: 2px solid var(--blue); outline-offset: -1px; }
+.type-hint { font-family: var(--mono); font-size: 0.78rem; color: var(--faint); margin: 0.5rem 0 0; min-height: 1em; }
+.type-hint.ready { color: var(--blue); }
 
-.type-hint {
-  font-family: var(--mono);
-  font-size: 0.72rem;
-  color: var(--faint);
-  margin: 0.6rem 0 0;
-  min-height: 1em;
-}
-.type-hint.ready { color: var(--alarm); }
+/* ---------- scanning placeholder ---------- */
 
-/* the "scanning…" placeholder shown while invasive probes run */
-.scanning {
-  font-family: var(--mono);
-  font-size: 0.9rem;
-  color: var(--dim);
-  padding: 1rem 0;
-}
-.scanning .dots::after {
-  content: '';
-  animation: dots 1.4s steps(4, end) infinite;
-}
-@keyframes dots {
-  0% { content: ''; } 25% { content: '·'; } 50% { content: '··'; } 75% { content: '···'; }
-}
-
-.json-receipt {
-  max-height: 30rem;
-  color: #b9d6c4;
-  line-height: 1.55;
-}
+.scanning { font-family: var(--mono); font-size: 0.9rem; color: var(--grey); padding: 0.5rem 0; }
 
 /* ---------- rarity funnel ---------- */
 
-.funnel { margin-top: 1.5rem; }
-
-.funnel-row {
-  margin-bottom: 1.25rem;
-  animation: rise 0.5s cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
-}
-
+.funnel { margin-top: 1.25rem; }
+.funnel-row { margin-bottom: 1rem; }
 .funnel-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  font-family: var(--mono);
-  font-size: 0.78rem;
-  margin-bottom: 0.4rem;
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-family: var(--mono); font-size: 0.82rem; margin-bottom: 0.3rem;
 }
-.funnel-label { color: var(--faint); text-transform: uppercase; letter-spacing: 0.12em; font-size: 0.66rem; }
-.funnel-val { color: var(--ink); }
+.funnel-label { color: var(--grey); text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.7rem; }
+.funnel-val { color: var(--ink); font-weight: bold; }
+.funnel-bar { height: 10px; background: #eee; border: 1px solid var(--rule); }
+.funnel-bar span { display: block; height: 100%; background: var(--ink); }
+.funnel-meta { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 0.75rem; color: var(--grey); margin-top: 0.25rem; }
+.funnel-cum { color: var(--blue); font-weight: bold; }
 
-.funnel-bar {
-  height: 5px;
-  background: var(--rule);
-  border-radius: 3px;
-  overflow: hidden;
-}
-.funnel-bar span {
-  display: block;
-  height: 100%;
-  background: linear-gradient(90deg, #6a4a3f, var(--alarm));
-  border-radius: 3px;
-}
+/* ---------- receipt / finale ---------- */
 
-.funnel-meta {
-  display: flex;
-  justify-content: space-between;
-  font-family: var(--mono);
-  font-size: 0.72rem;
-  color: var(--dim);
-  margin-top: 0.35rem;
-}
-.funnel-cum { color: var(--alarm); }
+.verdict { font-size: 1.35rem; line-height: 1.35; margin: 0 0 1rem; }
+.fingerprint { font-family: var(--mono); font-size: clamp(1.4rem, 7vw, 2.1rem); letter-spacing: 0.05em; color: var(--blue); margin: 1rem 0; word-break: break-all; }
 
-@media (prefers-reduced-motion: reduce) {
-  .funnel-row { animation: none; }
+.raw {
+  font-family: var(--mono); font-size: 0.75rem; line-height: 1.6; color: var(--ink);
+  background: var(--box); border: 1px solid var(--rule); padding: 0.8rem;
+  overflow-x: auto; max-height: 26rem; overflow-y: auto;
 }
+.raw table { border-collapse: collapse; }
+.raw td { padding: 0.08rem 0.8rem 0.08rem 0; vertical-align: top; }
+.raw td:first-child { color: var(--faint); white-space: nowrap; }
+.json-receipt { max-height: 30rem; color: var(--ink); }
 
-@media (prefers-reduced-motion: reduce) {
-  .claim { animation: none; opacity: 1; transform: none; }
-  .caret { animation: none; }
-}
+.footnote { font-family: var(--mono); font-size: 0.78rem; line-height: 1.7; color: var(--grey); margin-top: 2.5rem; }
+.footnote a { color: var(--blue); }

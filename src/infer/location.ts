@@ -66,24 +66,35 @@ export const vpnContradiction: Inference = (s) => {
     }));
   }
 
-  // Language vs. country mismatch — softer signal, only when we have a country.
+  // Language vs. country → the "multilingual, travelling, or VPN" tell.
   const langs = s['platform.languages']?.value as string[] | undefined;
   const country = str(s, 'edge.country');
-  if (langs?.length && country) {
-    const primary = langs[0].split('-')[1]?.toUpperCase();
-    if (primary && primary !== country && !langMatchesCountry(langs, country)) {
-      out.push(claim({
-        id: 'loc.langMismatch',
-        text: `Your browser is set to *${langs[0]}*, but you're connecting from *${country}*.`,
-        confidence: 'guess', act: 4, weight: 4,
-        evidence: ['platform.languages', 'edge.country'],
-        how: `Your language preference (${langs.join(', ')}) doesn't match the country your IP is in (${country}). Could be an expat, could be a traveller — or another sign the connection isn't where you are.`,
-      }));
-    }
+  if (langs?.length && country && !langMatchesCountry(langs, country)) {
+    const langName = languageName(langs[0].split('-')[0]) || langs[0];
+    // If the timezone ALSO disagrees with the IP, VPN jumps to the top of the list.
+    const tzMismatch = ipTz && browserTz && ipTz !== browserTz;
+    out.push(claim({
+      id: 'loc.langMismatch',
+      text: tzMismatch
+        ? `Your browser speaks *${langName}*, your IP is in *${country}*, and your clock is in a third place. That's not a traveller. That's a *VPN*.`
+        : `Your browser speaks *${langName}*, but your IP is in *${country}*, where that isn't the local language. So you're one of three things: *multilingual, travelling, or on a VPN* — and we can tell it's one of them.`,
+      confidence: tzMismatch ? 'likely' : 'guess', act: 4, weight: tzMismatch ? 7 : 5,
+      evidence: ['platform.languages', 'edge.country', 'edge.timezone', 'env.timezone'],
+      how: `Your configured language (${langs.join(', ')}) doesn't match the country your IP resolves to (${country}). On its own that's a soft signal; combined with a timezone that also disagrees, it's a near-certain VPN. Every site sees both of these on arrival and can draw the same conclusion.`,
+    }));
   }
 
   return out;
 };
+
+const LANG_NAMES: Record<string, string> = {
+  en: 'English', es: 'Spanish', fr: 'French', de: 'German', it: 'Italian',
+  pt: 'Portuguese', nl: 'Dutch', ru: 'Russian', ja: 'Japanese', ko: 'Korean',
+  zh: 'Chinese', ar: 'Arabic', hi: 'Hindi', tr: 'Turkish', pl: 'Polish',
+  sv: 'Swedish', da: 'Danish', fi: 'Finnish', no: 'Norwegian', cs: 'Czech',
+  he: 'Hebrew', th: 'Thai', vi: 'Vietnamese', id: 'Indonesian', uk: 'Ukrainian',
+};
+function languageName(code: string): string { return LANG_NAMES[code.toLowerCase()] ?? ''; }
 
 /** TLS/HTTP fingerprint captured during the handshake, before any JS. */
 export const handshake: Inference = (s) => {
