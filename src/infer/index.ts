@@ -1,7 +1,7 @@
 import type { Claim, Inference, SignalMap } from '../types';
-import { deviceModel, gpuTier, displayInference, peripherals, multiMonitor } from './device';
+import { deviceModel, gpuTier, peripherals, multiMonitor } from './device';
 import { geolocation, vpnContradiction, handshake, localTimeBeat, coloTriangulation } from './location';
-import { softwareFromFonts, osFromFonts, languagePacks, codecInference } from './software';
+import { softwareFromFonts, osFromFonts, languagePacks } from './software';
 import { localServices, extensions } from './invasive';
 import { lieDetection, automation } from './identity';
 import { webrtcClaims, permissionClaims, deepClaims } from './network';
@@ -16,8 +16,8 @@ const INFERENCES: Inference[] = [
   geolocation, coloTriangulation, localTimeBeat, handshake,
   // act 2 — software/OS/CPU
   osFromFonts, deepClaims,
-  // act 3 — device
-  deviceModel, gpuTier, displayInference, multiMonitor, peripherals, codecInference, batteryState,
+  // act 3 — device (refresh + codec claims removed: the intro already brags them)
+  deviceModel, gpuTier, multiMonitor, peripherals, batteryState,
   // act 4 — contradictions
   vpnContradiction, lieDetection, automation, trackingHypocrisy,
   // act 5 — installed software

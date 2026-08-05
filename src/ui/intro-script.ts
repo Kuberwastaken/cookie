@@ -56,57 +56,68 @@ function specLines(s: SignalMap): string[] {
   const hz = numOf('display.refreshHz');
   const res = s['display.resolution']?.value as [number, number] | undefined;
 
-  const { headline, expensive } = deviceHeadline(ua, gpuL, str('platform.model'), res);
+  const { headline, tier } = deviceProfile(ua, gpuL, str('platform.model'), res, cores);
 
-  const out: string[] = [];
-  out.push(`Nice machine, by the way. *${headline}*.`);
+  // A VM gets no spec brag — the fact that it's fake IS the punchline.
+  if (tier === 'vm') return [`Hold on — this isn't even real hardware. It's a *virtual machine*. We'll play along.`];
 
-  // Assemble the spec brag from whatever we actually measured.
+  const out: string[] = [`Nice machine, by the way. *${headline}*.`];
+
+  // Graphics first (per the brag order), then cores, screen, resolution.
   const bits: string[] = [];
-  if (cores) bits.push(`${cores} CPU cores`);
   const gpuName = prettyGpu(gpu);
   if (gpuName && !/apple m/i.test(headline)) bits.push(gpuName);
+  if (cores) bits.push(`${cores} CPU cores`);
   if (hz && hz >= 118) bits.push(`a ${hz}Hz ${/apple|iphone|ipad|mac/i.test(ua) ? 'ProMotion ' : ''}screen`);
   if (res) bits.push(`a ${res[0]}×${res[1]} display`);
 
   if (bits.length >= 2) {
-    out.push(`${cap(list(bits))}. All the bells and whistles.`);
-    if (expensive) out.push("Wasn't that extremely expensive?");
+    const closer = tier === 'high' ? 'All the bells and whistles.' : tier === 'low' ? 'Doing its best, honestly.' : 'A perfectly capable setup.';
+    out.push(`${cap(list(bits))}. ${closer}`);
   } else if (bits.length === 1) {
     out.push(`${cap(bits[0])}, no less.`);
   }
 
+  if (tier === 'high') out.push("Wasn't that extremely expensive?");
+  else if (tier === 'low') out.push("Bit of an *old ahh device*, though. Time for an upgrade maybe… in this economy.");
+
   return out;
 }
 
-function deviceHeadline(ua: string, gpuL: string, model: string, res?: [number, number]): { headline: string; expensive: boolean } {
+type Tier = 'high' | 'mid' | 'low' | 'vm';
+function deviceProfile(ua: string, gpuL: string, model: string, res: [number, number] | undefined, cores?: number): { headline: string; tier: Tier } {
   if (/swiftshader|llvmpipe|vmware|virtualbox|parallels|basic render/.test(gpuL)) {
-    return { headline: "wait — this isn't even real hardware, it's a virtual machine", expensive: false };
+    return { headline: 'a virtual machine', tier: 'vm' };
   }
   if (/iPhone/.test(ua)) {
     const minDim = res ? Math.min(res[0], res[1]) : 0;
-    if (minDim && minDim <= 375) return { headline: 'an older iPhone (it still works, bless it)', expensive: false };
-    return { headline: 'an iPhone', expensive: true };
+    if (minDim && minDim <= 375) return { headline: 'an older iPhone (it still works, bless it)', tier: 'low' };
+    return { headline: 'an iPhone', tier: 'high' };
   }
-  if (/iPad/.test(ua)) return { headline: 'an iPad', expensive: true };
+  if (/iPad/.test(ua)) return { headline: 'an iPad', tier: 'high' };
   if (/Android/.test(ua)) {
-    if (/SM-/.test(model) || /SamsungBrowser/.test(ua)) return { headline: 'a Samsung — a person of taste', expensive: false };
-    if (/Pixel/i.test(model)) return { headline: 'a Pixel', expensive: false };
-    return { headline: 'an Android (…okay, no judgement)', expensive: false };
+    if (/SM-/.test(model) || /SamsungBrowser/.test(ua)) return { headline: 'a Samsung — a person of taste', tier: 'mid' };
+    if (/Pixel/i.test(model)) return { headline: 'a Pixel', tier: 'mid' };
+    if (/adreno\s*[78]|mali-g[78]|immortalis/i.test(gpuL)) return { headline: 'a flagship Android', tier: 'high' };
+    return { headline: 'an Android (…okay, no judgement)', tier: 'mid' };
   }
   if (/Macintosh|Mac OS X/.test(ua)) {
     const m = gpuL.match(/apple\s+(m\d)(\s*(pro|max|ultra))?/i);
     if (m) {
       const chip = (m[1] + (m[3] ? ' ' + m[3] : '')).toUpperCase();
-      return { headline: `an Apple ${chip}`, expensive: /pro|max|ultra/.test(gpuL) };
+      return { headline: `an Apple ${chip}`, tier: 'high' };
     }
-    return { headline: 'an Intel Mac (a vintage one)', expensive: false };
+    return { headline: 'an Intel Mac (a vintage one)', tier: 'low' };
   }
-  if (/CrOS/.test(ua)) return { headline: 'a Chromebook', expensive: false };
-  if (/rtx\s*(30|40|50)|radeon\s*rx\s*(6|7|9)\d{2}/.test(gpuL)) return { headline: 'a proper gaming rig', expensive: true };
-  if (/Windows/.test(ua)) return { headline: 'a Windows PC', expensive: false };
-  if (/Linux|X11/.test(ua)) return { headline: 'a Linux box (of course it is)', expensive: false };
-  return { headline: 'some kind of machine I can only half-place', expensive: false };
+  if (/CrOS/.test(ua)) return { headline: 'a Chromebook', tier: 'low' };
+  if (/rtx\s*(30|40|50)|radeon\s*rx\s*(6|7|9)\d{2}/.test(gpuL)) return { headline: 'a proper gaming rig', tier: 'high' };
+  if (/Windows/.test(ua)) {
+    if (/intel|uhd|iris|hd graphics/.test(gpuL) && cores != null && cores <= 4) return { headline: 'a Windows PC', tier: 'low' };
+    if (cores != null && cores >= 12) return { headline: 'a Windows PC', tier: 'high' };
+    return { headline: 'a Windows PC', tier: 'mid' };
+  }
+  if (/Linux|X11/.test(ua)) return { headline: 'a Linux box (of course it is)', tier: 'mid' };
+  return { headline: 'some kind of machine I can only half-place', tier: 'mid' };
 }
 
 function prettyGpu(raw: string): string {

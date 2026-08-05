@@ -110,19 +110,51 @@ export const automation: Inference = (s) => {
   return out;
 };
 
+/** How they arrived, phrased for the return-visit beat. */
+function arrivalFlavor(): { direct: string; source: string } {
+  let host = '';
+  try { host = document.referrer ? new URL(document.referrer).hostname : ''; } catch { host = ''; }
+  if (!host) return { direct: 'And you came straight here — no link, no search. You remembered the URL by heart. That is almost sweet.', source: '' };
+  let name = host.replace(/^www\./, '');
+  if (/news\.ycombinator/.test(host)) name = 'Hacker News';
+  else if (/(twitter|x)\.com|t\.co/.test(host)) name = 'X';
+  else if (/reddit/.test(host)) name = 'Reddit';
+  else if (/linkedin/.test(host)) name = 'LinkedIn';
+  else if (/github/.test(host)) name = 'GitHub';
+  else if (/google\./.test(host)) name = 'a Google search';
+  return { direct: '', source: `And you came back from ${name} again.` };
+}
+
 /** The return-visit gotcha — the whole argument, made personal. */
 export function returnVisit(visit: Visit): Claim[] {
-  if (visit.count <= 1) return [];
   const wiped = visit.restored.length;
+  const arrival = arrivalFlavor();
+
+  // First-time visitor still gets a line — foreshadowing the persistence.
+  if (visit.count <= 1) {
+    return [claim({
+      id: 'id.return',
+      text: arrival.direct
+        ? `First time here, and you typed the link in yourself — bold. Either way, I'll *remember you* now. That's rather the point.`
+        : `First time here? I'll *remember you* now — no cookie required. Come back and I'll prove it.`,
+      confidence: 'certain', act: 9, weight: 8,
+      evidence: [],
+      how: `I just stored a random tag — not in a cookie, but across localStorage, IndexedDB, the Cache API and window.name at once. Clear your cookies, come back, and I'll still know you. That's the whole demonstration.`,
+    })];
+  }
+
   const daysAgo = Math.max(0, Math.round((Date.now() - visit.first) / 86400000));
   const when = daysAgo === 0 ? 'earlier today' : daysAgo === 1 ? 'yesterday' : `${daysAgo} days ago`;
+  const lede = visit.count >= 4
+    ? `You *really* like this website, don't you? This is visit number *${visit.count}*.`
+    : `I've seen you before — you first showed up *${when}*. This is visit number *${visit.count}*.`;
 
   const out: Claim[] = [claim({
     id: 'id.return',
-    text: `I've seen you before. You first showed up *${when}*. This is visit number *${visit.count}*.`,
+    text: `${lede} ${arrival.direct || arrival.source}`.trim(),
     confidence: 'certain', act: 9, weight: 8,
     evidence: [],
-    how: `On your first visit I stored a random tag — not in a cookie, but across localStorage, IndexedDB and the Cache API at once. I never learned your name; I just recognised the tag.`,
+    how: `On your first visit I stored a random tag — not in a cookie, but across localStorage, IndexedDB, the Cache API and window.name at once. I never learned your name; I just recognised the tag, and counted.`,
   })];
 
   if (wiped > 0) {
