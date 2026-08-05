@@ -96,9 +96,13 @@ function deviceProfile(ua: string, gpuL: string, model: string, res: [number, nu
   }
   if (/iPad/.test(ua)) return { headline: 'an iPad', tier: 'high' };
   if (/Android/.test(ua)) {
-    if (/SM-/.test(model) || /SamsungBrowser/.test(ua)) return { headline: 'a Samsung — a person of taste', tier: 'mid' };
-    if (/Pixel/i.test(model)) return { headline: 'a Pixel', tier: 'mid' };
-    if (/adreno\s*[78]|mali-g[78]|immortalis/i.test(gpuL)) return { headline: 'a flagship Android', tier: 'high' };
+    // Adreno 7xx/8xx and Mali-G7xx/G78+ (and Immortalis) are flagship tiers.
+    const adr = gpuL.match(/adreno\D*(\d{3,4})/);
+    const mali = gpuL.match(/mali-g(\d{2,3})/);
+    const flagship = (adr && +adr[1] >= 700) || (mali && +mali[1] >= 70) || /immortalis/.test(gpuL);
+    if (/SM-/.test(model) || /SamsungBrowser/.test(ua)) return { headline: 'a Samsung — a person of taste', tier: flagship ? 'high' : 'mid' };
+    if (/Pixel/i.test(model)) return { headline: 'a Pixel', tier: flagship ? 'high' : 'mid' };
+    if (flagship) return { headline: 'a flagship Android', tier: 'high' };
     return { headline: 'an Android (…okay, no judgement)', tier: 'mid' };
   }
   if (/Macintosh|Mac OS X/.test(ua)) {
@@ -128,7 +132,7 @@ function prettyGpu(raw: string): string {
   const apple = raw.match(/Apple\s+M\d(\s*(Pro|Max|Ultra))?/i);
   if (apple) return `an Apple ${apple[0].replace(/Apple\s+/i, '')}`;
   if (/intel/i.test(raw)) return 'Intel graphics';
-  const adreno = raw.match(/Adreno\s*\(TM\)\s*(\d+)/i);
+  const adreno = raw.match(/Adreno\D*(\d{3,4})/i);
   if (adreno) return `an Adreno ${adreno[1]}`;
   const mali = raw.match(/Mali-\w+/i);
   if (mali) return mali[0];

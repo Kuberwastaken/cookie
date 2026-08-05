@@ -94,7 +94,12 @@ async function clientGeoFallback(signals: SignalMap): Promise<void> {
     put('edge.longitude', 'Longitude', d.longitude);
     put('edge.timezone', 'Timezone (from IP)', d.timezone?.id);
     put('edge.asn', 'ASN', d.connection?.asn);
-    put('edge.asOrg', 'Network operator', d.connection?.org || d.connection?.isp);
+    // Prefer a real name; ipwho.is sometimes returns "Internet Service Provider".
+    const generic = /^(internet service provider|isp|unknown|n\/?a|none|-)$/i;
+    const org = d.connection?.org as string | undefined;
+    const isp = d.connection?.isp as string | undefined;
+    const netName = org && !generic.test(org.trim()) ? org : isp && !generic.test(isp.trim()) ? isp : undefined;
+    put('edge.asOrg', 'Network operator', netName);
     signals['edge.__source'] = { id: 'edge.__source', label: 'Geo source', value: 'client-side IP lookup (ipwho.is)' };
   } catch { /* offline or blocked — location act just gets skipped */ }
 }

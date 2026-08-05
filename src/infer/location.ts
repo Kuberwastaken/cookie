@@ -29,7 +29,7 @@ export const geolocation: Inference = (s) => {
     }));
   }
 
-  if (org) {
+  if (org && !isPlaceholderOrg(org)) {
     const isp = cleanOrg(org);
     out.push(claim({
       id: 'loc.isp',
@@ -203,6 +203,11 @@ export const handshake: Inference = (s) => {
 
 function cleanOrg(org: string): string {
   return org.replace(/,?\s*(inc|llc|ltd|gmbh|s\.a\.|co\.|corp)\.?$/i, '').trim();
+}
+
+/** Geo APIs sometimes return junk placeholders instead of a real ISP name. */
+function isPlaceholderOrg(org: string): boolean {
+  return /^(internet service provider|isp|unknown|n\/?a|none|null|private|reserved|-)$/i.test(org.trim());
 }
 
 const CONSUMER_ISP = /comcast|verizon|at&t|t-mobile|spectrum|charter|cox|xfinity|vodafone|telekom|orange|jio|airtel|bt\b|sky|virgin|telus|rogers|bell|frontier|centurylink|starlink|deutsche telekom/i;
