@@ -39,3 +39,10 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+        with:
+          # GitHub's Pages queue has been sitting on deployments well past the
+          # action's 10-minute default, failing the run even though the build
+          # succeeded in ~20s. Give it half an hour before giving up.
+          timeout: 1800000
+          error_count: 20
+          reporting_interval: 10000
