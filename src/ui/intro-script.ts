@@ -36,13 +36,23 @@ function referrerLine(): string | null {
   let host = '';
   try { host = document.referrer ? new URL(document.referrer).hostname : ''; } catch { host = ''; }
   if (!host) return null;
-  if (/news\.ycombinator\.com/.test(host)) return 'You came from Hacker News. Hi. Yes, this is already the part that knows that.';
-  if (/reddit\.com/.test(host)) return 'You came from Reddit. Someone posted this, and here you are.';
+  if (/news\.ycombinator\.com/.test(host)) return 'You came from Hacker News. Yes, this is already the part that knows that.';
+  if (/lobste\.rs/.test(host)) return 'You came from Lobsters. Good taste.';
+  if (/reddit\.com|redd\.it/.test(host)) return 'You came from Reddit. Someone posted this, and here you are.';
   if (/(twitter|x)\.com|t\.co/.test(host)) return 'You came from X. Someone tweeted this at you.';
+  if (/linkedin\.com|lnkd\.in/.test(host)) return "You came from LinkedIn. Hope this counts as thought leadership.";
   if (/github\.com/.test(host)) return "You came from GitHub. So you're one of us.";
   if (/producthunt/.test(host)) return 'You came from Product Hunt. Hello, early adopter.';
-  if (/google\./.test(host)) return 'You came from a Google search. What did you type to end up here?';
-  return `You came from ${host}.`;
+  if (/news\.google|google\./.test(host)) return 'You came from a Google search. What did you type to end up here?';
+  if (/bing\.com|duckduckgo\.com|search\.brave/.test(host)) return 'You came from a search engine. The privacy-conscious kind, even.';
+  if (/t\.me|telegram/.test(host)) return 'You came from Telegram. Someone forwarded you this.';
+  if (/mastodon|bsky|fosstodon|\.social/.test(host)) return 'You came from the fediverse. Of course you did.';
+  if (/facebook\.com|fb\./.test(host)) return 'You came from Facebook. Bold of you, still being there.';
+  if (/youtube\.com|youtu\.be/.test(host)) return 'You came from YouTube. A video sent you here.';
+  if (/slack\.com/.test(host)) return 'You came from Slack. Someone dropped this in a channel.';
+  if (/discord/.test(host)) return 'You came from Discord. Someone posted this in a server.';
+  // Fall back to the bare domain, minus the noise that makes it look like a log line.
+  return `You came from ${host.replace(/^www\./, '')}.`;
 }
 
 function specLines(s: SignalMap): string[] {
