@@ -54,18 +54,21 @@ export const deviceModel: Inference = (s) => {
     }));
   }
 
-  // Fractional DPR means fractional UI scaling somewhere. It is NOT Windows-only
-  // (GNOME/KDE do fractional scaling too) and browser zoom moves it as well, so
-  // we report the number without guessing the OS or the cause.
+  // Fractional DPR means fractional UI scaling somewhere. Careful: DPR is
+  // hardware density MULTIPLIED by scaling, so on a 2x HiDPI panel at 125% the
+  // DPR is 2.5 — reporting that as "250%" was wrong. Factor out the likely base
+  // density first, and only speak when the result looks like a real setting.
   if (dpr % 1 !== 0 && !model) {
-    const pct = Math.round(dpr * 100);
-    out.push(claim({
-      id: 'device.winScale',
-      text: `Your interface is scaled to about *${pct}%*, not the default.`,
-      confidence: 'guess', act: 3, weight: 4,
-      evidence: ['display.pixelRatio'],
-      how: `Your device pixel ratio is ${dpr}, a fractional value. That comes from OS display scaling (Windows, or fractional scaling on GNOME/KDE) or from browser zoom. We can see that you've changed it from the default, but not which of those did it.`,
-    }));
+    const scale = inferScaling(dpr);
+    if (scale) {
+      out.push(claim({
+        id: 'device.winScale',
+        text: `Your interface is scaled to about *${scale.pct}%*, not the default.`,
+        confidence: 'guess', act: 3, weight: 4,
+        evidence: ['display.pixelRatio'],
+        how: `Your device pixel ratio is ${dpr}. That's your screen's hardware density (${scale.base}×) multiplied by your UI scaling, which works out to roughly ${scale.pct}%. It could be an OS display-scaling setting or browser zoom — we can tell it isn't the default, but not which one changed it.`,
+      }));
+    }
   }
 
   return out;
@@ -190,6 +193,32 @@ function physical(w: number, h: number, dpr: number): string {
 
 function startsWithArticle(s: string): boolean {
   return /^(a|an|the)\s/i.test(s);
+}
+
+/**
+ * Split a device pixel ratio into (hardware density × UI scaling). A 2x retina
+ * panel at 125% reports dpr 2.5, which is 125% scaling, not 250%. We try each
+ * plausible base density and keep the one whose implied scaling matches a real
+ * setting people actually pick; if nothing matches, we say nothing.
+ */
+// Scaling factors people actually choose. 200%+ is deliberately absent: an
+// integer DPR never reaches here, and reading dpr 2.5 as "250% on a 1x screen"
+// (rather than 125% on a 2x screen) is exactly the bug this function exists to
+// avoid. Ties prefer the larger base, i.e. the more modest scaling factor.
+const COMMON_SCALES = [1.1, 1.25, 1.4, 1.5, 1.75];
+function inferScaling(dpr: number): { pct: number; base: number } | null {
+  let best: { pct: number; base: number; err: number } | null = null;
+  for (const base of [1, 2, 3]) {
+    const scale = dpr / base;
+    if (scale < 1.05 || scale > 1.9) continue;
+    for (const c of COMMON_SCALES) {
+      const err = Math.abs(scale - c);
+      if (err < 0.02 && (!best || err <= best.err)) {
+        best = { pct: Math.round(c * 100), base, err };
+      }
+    }
+  }
+  return best ? { pct: best.pct, base: best.base } : null;
 }
 
 interface GpuGuess { name: string; article: string; exact: boolean; }

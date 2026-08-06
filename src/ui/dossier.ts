@@ -1,5 +1,6 @@
 import type { Claim, SignalMap } from '../types';
 import type { KeyEvent } from '../probes/interactive';
+import { follow } from './autoscroll';
 
 export const ACTS: Record<number, { label: string; invasive?: boolean }> = {
   0: { label: '' },
@@ -88,6 +89,7 @@ export class Dossier {
 
     p.append(btn);
     host.append(p, drawer);
+    follow(p, { smooth: true, ratio: 0.78 });
   }
 
   /** The consent gate between the passive acts and the invasive ones. */

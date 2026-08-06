@@ -9,6 +9,8 @@
  * your real specs.
  */
 
+import { follow as followScroll } from './autoscroll';
+
 export type IntroSegment = string | (() => Promise<string[]>);
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -61,36 +63,45 @@ export async function runIntro(root: HTMLElement, segments: IntroSegment[], auto
   const escHandler = (e: KeyboardEvent) => { if (e.key === 'Escape') skipAll(); };
   addEventListener('keydown', escHandler);
 
-  const follow = (el: HTMLElement) => {
-    if (reduce()) return;
-    if (el.getBoundingClientRect().bottom > innerHeight - 60) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'end' });
-    }
+  const follow = (el: HTMLElement, force = false) => followScroll(el, { force });
+
+  // Enter/Space means "hurry up": finish the line that's typing right now, and
+  // if nothing is typing, move to the next one. Previously the key only did
+  // anything in the brief gap after a line finished, so it felt broken.
+  let rush: (() => void) | null = null;
+  const onKey = (e: KeyboardEvent) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    e.preventDefault();
+    rush?.();
   };
+  addEventListener('keydown', onKey);
 
   const waitAdvance = () =>
     new Promise<void>((res) => {
       if (state.skipped) return res();
       let done = false;
-      const finish = () => { if (done) return; done = true; removeEventListener('keydown', key); clearTimeout(t); res(); };
-      const key = (e: KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); finish(); } };
-      addEventListener('keydown', key);
+      const finish = () => { if (done) return; done = true; rush = null; clearTimeout(t); res(); };
+      rush = finish;
       const t = setTimeout(finish, autoMs);
     });
 
   const typeInto = async (p: HTMLElement, line: string) => {
+    let rushed = false;
+    rush = () => { rushed = true; };
     for (const tok of parse(line)) {
       const target = tok.em ? document.createElement('em') : document.createTextNode('');
-      if (tok.em) p.append(target); else p.append(target);
-      if (reduce() || state.skipped) { target.textContent = tok.text; continue; }
+      p.append(target);
+      if (reduce() || state.skipped || rushed) { target.textContent = tok.text; continue; }
       let i = 0;
       for (const ch of tok.text) {
         target.textContent += ch;
-        if (++i % 6 === 0) follow(p);
+        if (++i % 3 === 0) follow(p);
         await sleep(delayFor(ch));
-        if (state.skipped) { target.textContent = tok.text; break; }
+        if (state.skipped || rushed) { target.textContent = tok.text; break; }
       }
     }
+    rush = null;
+    follow(p, true);
   };
 
   for (const seg of segments) {
@@ -110,6 +121,7 @@ export async function runIntro(root: HTMLElement, segments: IntroSegment[], auto
   }
 
   removeEventListener('keydown', escHandler);
+  removeEventListener('keydown', onKey);
   skip.remove();
   hint.remove();
 }
