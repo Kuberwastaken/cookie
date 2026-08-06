@@ -69,10 +69,18 @@ export const sessionMeta: Inference = (s) => {
   if (s['incognito.private']?.value === true) {
     out.push(claim({
       id: 'ses.incognito',
-      text: `Oh, you're in a *private / incognito window*. You thought that would change what we can see. It changed *nothing*. Cute.`,
+      text: `You're *probably in a private window*. You thought that would change what we can see. It changed *nothing*. Cute.`,
       confidence: 'guess', act: 6, weight: 7,
       evidence: ['incognito.private', 'incognito.method'],
-      how: `Incognito only stops your own browser from saving history and cookies to disk. It doesn't touch your IP, your GPU, your fonts, your screen, or a single thing on this page, all of which worked exactly the same. We spotted the private mode from how the storage API behaves, and carried on regardless.`,
+      how: `Private mode only stops your own browser writing history and cookies to disk. It doesn't touch your IP, your GPU, your fonts, your screen, or a single thing on this page, all of which worked exactly the same. Safari private windows switch off the Origin Private File System, and yours is off, which is the tell. We say "probably" because a genuinely full disk raises the same error.`,
+    }));
+  } else if (s['incognito.attempted']?.value === false) {
+    out.push(claim({
+      id: 'ses.incognitoUnknown',
+      text: `If you opened this in a private window hoping it would help: we *can't actually tell* on your browser, and it wouldn't have helped anyway.`,
+      confidence: 'certain', act: 6, weight: 3,
+      evidence: ['incognito.attempted'],
+      how: `We deliberately don't guess at private mode on Chrome or Firefox. Chrome closed the storage-quota gap that used to give it away, and the technique that replaced it is a timing benchmark that misfires on ordinary machines with fast storage; Firefox's remaining tell can't be separated from strict tracking protection in a normal window. Everything else on this page worked identically either way, which is the actual point.`,
     }));
   }
 

@@ -4,11 +4,35 @@ const sig = (id: string, label: string, value: unknown, extra: Partial<Signal> =
   id, label, value, ...extra,
 });
 
-/** Private-mode detection. Every heuristic here is soft: modern browsers have
- * deliberately closed most of the old quota/API gaps (Chrome's FileSystem
- * quota trick was patched years ago; Firefox private windows now share the
- * same storage limits as normal ones in recent versions). Treat the output
- * as a guess, never a certainty, the UI should hedge accordingly. */
+/**
+ * Private-browsing detection, deliberately attempted on Safari ONLY.
+ *
+ * The old tricks are dead, and the replacements are worse than nothing:
+ *  - Chrome's storage-quota gap is gone. Chrome now clamps an Incognito
+ *    window's reported quota to the same shape as a normal one, so there is no
+ *    threshold left to test. The only maintained replacement in the wild is an
+ *    IndexedDB durability-timing microbenchmark, which as of mid-2026 has an
+ *    open, confirmed ~50/50 false positive on ramdisk-backed profiles (CI,
+ *    VDI, tmpfs home directories) and rests on a storage backend Chrome has
+ *    already flagged for replacement. Chrome's Guest mode is also
+ *    indistinguishable from Incognito by Google's stated design.
+ *  - Firefox private windows have had working IndexedDB since Firefox 115, so
+ *    "IDB open fails" is dead code, and the remaining candidate (OPFS throwing)
+ *    has an unexplained false positive reported on Firefox 150 and cannot be
+ *    cleanly separated from ETP Strict / resistFingerprinting in an ordinary
+ *    window.
+ *
+ * So: on Chrome and Firefox we do not guess at all. On Safari, private windows
+ * still make the Origin Private File System unavailable, which is a real,
+ * mechanism-backed signal, and we report it as "likely" rather than certain
+ * because genuine low-disk conditions raise the same error.
+ */
+
+const SAFARI = () => {
+  const ua = navigator.userAgent;
+  return /Safari/.test(ua) && !/Chrome|Chromium|Edg\/|OPR\//.test(ua);
+};
+
 export const incognitoProbe: Probe = {
   id: 'incognito',
   title: 'Private browsing',
@@ -17,68 +41,46 @@ export const incognitoProbe: Probe = {
     const out: Signal[] = [];
     let isPrivate = false;
     let method: string | null = null;
+    let attempted = false;
 
-    // navigator.storage.estimate(): historically Chrome incognito capped quota
-    // to a small fraction of disk (or of RAM) instead of the real free space.
-    // As of recent Chrome this gap has mostly been closed, so this is weak
-    // evidence at best, a low absolute quota, not a reliable ratio anymore.
+    // Keep the raw quota purely as a fingerprint signal. It is NOT used to
+    // decide private mode any more.
     let quota: number | null = null;
     try {
-      if (navigator.storage?.estimate) {
-        const est = await navigator.storage.estimate();
-        quota = est.quota ?? null;
-        // A few hundred MB or less is unusually small for a modern desktop
-        // browser's persistent-storage quota; treat it as a weak signal only.
-        if (typeof quota === 'number' && quota > 0 && quota < 200 * 1024 * 1024) {
-          isPrivate = true;
-          method = 'storage.estimate() quota unusually small';
-        }
-      }
-    } catch { /* storage API gated or unsupported */ }
+      const est = await navigator.storage?.estimate?.();
+      quota = est?.quota ?? null;
+    } catch { /* gated or unsupported */ }
 
-    // Safari-specific: in older private windows, IndexedDB either threw
-    // synchronously on open or silently failed to persist. Recent Safari has
-    // largely fixed this too, so a successful open here proves very little.
-    if (!isPrivate) {
-      try {
-        await new Promise<void>((resolve, reject) => {
-          const req = indexedDB.open('nocookies-idb-probe');
-          req.onerror = () => reject(req.error ?? new Error('idb open failed'));
-          req.onsuccess = () => { req.result.close(); resolve(); };
-          setTimeout(() => reject(new Error('idb open timed out')), 800);
-        });
-      } catch {
-        isPrivate = true;
-        method = 'IndexedDB open failed/blocked';
-      }
-    }
-
-    // Safari-specific: StorageManager.getDirectory() (Origin Private File
-    // System) has historically thrown inside private windows.
-    if (!isPrivate) {
-      try {
-        const sm = navigator.storage as (StorageManager & { getDirectory?: () => Promise<unknown> }) | undefined;
-        if (sm?.getDirectory) {
+    if (SAFARI()) {
+      attempted = true;
+      const sm = navigator.storage as (StorageManager & { getDirectory?: () => Promise<unknown> }) | undefined;
+      if (typeof sm?.getDirectory === 'function') {
+        try {
+          // Must run on the main thread: OPFS fails differently inside workers
+          // regardless of browsing mode.
           await sm.getDirectory();
-        }
-      } catch (err) {
-        // Only trust this if it's not just "unsupported", many non-Safari
-        // browsers don't implement getDirectory at all and would throw here
-        // in a normal window too, so this stays a weak, best-effort signal.
-        if (/private|denied|NotAllowed/i.test(err instanceof Error ? err.message : String(err))) {
-          isPrivate = true;
-          method = 'StorageManager.getDirectory() denied';
+        } catch (err) {
+          const e = err as { name?: string; message?: string };
+          const msg = `${e?.name ?? ''} ${e?.message ?? ''}`;
+          // Safari's private-window signature. Anything else (SecurityError,
+          // InvalidStateError) we ignore rather than over-read.
+          if (/unknown transient reason/i.test(msg) || e?.name === 'UnknownError') {
+            isPrivate = true;
+            method = 'Safari: Origin Private File System unavailable';
+          }
         }
       }
     }
 
     out.push(
       sig('incognito.private', 'Likely private browsing', isPrivate, {
-        display: isPrivate ? `probably (${method})` : 'no strong signal',
+        display: isPrivate ? `likely (${method})` : attempted ? 'no signal' : 'not testable on this browser',
       }),
       sig('incognito.method', 'Detection method', method),
+      sig('incognito.attempted', 'Detection attempted', attempted),
       sig('incognito.quota', 'Storage quota (bytes)', quota, {
         display: quota != null ? `${Math.round(quota / (1024 * 1024))} MB` : 'unknown',
+        entropy: 2,
       }),
     );
 
