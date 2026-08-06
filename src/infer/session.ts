@@ -77,10 +77,10 @@ export const sessionMeta: Inference = (s) => {
   } else if (s['incognito.attempted']?.value === false) {
     out.push(claim({
       id: 'ses.incognitoUnknown',
-      text: `If you opened this in a private window hoping it would help: we *can't actually tell* on your browser, and it wouldn't have helped anyway.`,
-      confidence: 'certain', act: 6, weight: 3,
+      text: `A private window wouldn't have changed *any* of this, incidentally. Every reading above works exactly the same in one.`,
+      confidence: 'certain', act: 6, weight: 2,
       evidence: ['incognito.attempted'],
-      how: `We deliberately don't guess at private mode on Chrome or Firefox. Chrome closed the storage-quota gap that used to give it away, and the technique that replaced it is a timing benchmark that misfires on ordinary machines with fast storage; Firefox's remaining tell can't be separated from strict tracking protection in a normal window. Everything else on this page worked identically either way, which is the actual point.`,
+      how: `Private mode only stops your own browser writing history and cookies to disk. It doesn't touch your IP, GPU, fonts, screen or timezone. We're not claiming you're in one, on your browser we deliberately don't guess: Chrome closed the storage-quota gap that used to give it away, and the timing benchmark that replaced it misfires on ordinary machines with fast storage, while Firefox's remaining tell can't be told apart from strict tracking protection in a normal window.`,
     }));
   }
 
