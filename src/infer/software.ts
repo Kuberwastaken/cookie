@@ -126,16 +126,16 @@ function softwareLine(hit: SoftwareHit): { text: string; weight: number; aside: 
   const name = hit.name.toLowerCase();
   if (name.includes('latex') || name.includes('tex')) {
     return {
-      text: `You've got *LaTeX* installed. You write academic papers, or you're a grad student.`,
+      text: `You've got *LaTeX's fonts* installed. Academic papers, or a maths-heavy day job.`,
       weight: 8,
       aside: `Almost nobody outside research and academia has these, it's one of the most revealing fonts you can leak.`,
     };
   }
   if (name.includes('adobe')) {
-    return { text: `You have *Adobe Creative Cloud* fonts installed.`, weight: 5, aside: `You do design or photography work.` };
+    return { text: `You have *Adobe's fonts* installed.`, weight: 5, aside: `Design or photography software put them there, though fonts stick around long after the app is gone.` };
   }
   if (name.includes('office')) {
-    return { text: `You use *Microsoft Office*.`, weight: 3, aside: `Common, but still: we know.` };
+    return { text: `*Microsoft Office's fonts* are on this machine.`, weight: 3, aside: `Fonts outlive the software that installed them, so this means Office was here at some point, not necessarily that you still use it.` };
   }
   if (name.includes('developer') || name.includes('coding')) {
     return { text: `You have programmer fonts installed, you *write code*.`, weight: 6, aside: `These fonts don't come with any OS; you went and installed them.` };

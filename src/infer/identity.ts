@@ -27,6 +27,22 @@ function osFamily(os: string): 'windows' | 'apple' | 'unix' | null {
 }
 
 /**
+ * Independent OS read from the installed text-to-speech voices. Font detection
+ * is measurement-based and can misfire (it once told a Windows 11 user their
+ * fonts were Linux's), so we require this second opinion before accusing anyone
+ * of spoofing their User-Agent.
+ */
+function osFromVoices(s: SignalMap): 'windows' | 'apple' | 'unix' | null {
+  const names = s['voices.hash']?.value;
+  if (!Array.isArray(names) || !names.length) return null;
+  const joined = names.join(' ').toLowerCase();
+  if (/microsoft /.test(joined)) return 'windows';
+  if (/siri|com\.apple|samantha|daniel|moira|karen|fiona|alex\b/.test(joined)) return 'apple';
+  if (/google |espeak|festival/.test(joined)) return 'unix';
+  return null;
+}
+
+/**
  * The lie-detector claims. Catching the browser in a contradiction is the
  * "I can't hide" beat, it plays in Act 4 alongside the VPN mismatch.
  */
@@ -51,7 +67,11 @@ export const lieDetection: Inference = (s) => {
   const fontOS = s['fonts.impliedOS']?.value as string | undefined;
   const uaFam = uaOS ? osFamily(uaOS) : null;
   const fontFam = fontOS ? osFamily(fontOS) : null;
-  if (uaOS && fontOS && fontOS !== 'unknown' && uaFam && fontFam && uaFam !== fontFam) {
+  // Only cry "spoofed" when a second, independent signal (the installed voice
+  // list) also disagrees with the User-Agent. Fonts alone are too noisy.
+  const voiceFam = osFromVoices(s);
+  const corroborated = voiceFam != null && voiceFam !== uaFam;
+  if (uaOS && fontOS && fontOS !== 'unknown' && uaFam && fontFam && uaFam !== fontFam && corroborated) {
     out.push(claim({
       id: 'lie.platform',
       text: `Your User-Agent says *${cap(uaOS)}*, but your installed fonts are *${cap(fontOS)}*'s. One of those is lying, and it isn't the fonts.`,
@@ -129,6 +149,19 @@ function arrivalFlavor(): { direct: string; source: string } {
 export function returnVisit(visit: Visit): Claim[] {
   const wiped = visit.restored.length;
   const arrival = arrivalFlavor();
+
+  // Storage is being blocked outright, so we genuinely cannot tell whether
+  // you've been here before. Say that, rather than insisting it's your first
+  // visit every single time (which is what people kept, correctly, calling out).
+  if (!visit.persisted) {
+    return [claim({
+      id: 'id.nostore',
+      text: `I tried to tag you so I'd know you next time. Your browser *threw it away*. Every store I reached for came back empty, so as far as I'm concerned you're a stranger every single visit. That's your setup working, and it's rarer than you'd think.`,
+      confidence: 'certain', act: 9, weight: 9,
+      evidence: [],
+      how: `We write a random tag to localStorage, IndexedDB, the Cache API and window.name, then read it straight back. Nothing survived, which means strict tracking protection, a private window, or clear-on-close. Note this cuts both ways: if your browser also randomises canvas and audio (Firefox's resistFingerprinting does), your fingerprint changes every visit too, which is exactly why it looks different each time.`,
+    })];
+  }
 
   // First-time visitor still gets a line, foreshadowing the persistence.
   if (visit.count <= 1) {

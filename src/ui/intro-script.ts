@@ -71,7 +71,9 @@ function specLines(s: SignalMap): string[] {
   const bits: string[] = [];
   const gpuName = prettyGpu(gpu);
   if (gpuName && !/apple m/i.test(headline)) bits.push(gpuName);
-  if (cores) bits.push(`${cores} CPU cores`);
+  // Browsers cap/round hardwareConcurrency (Firefox tops out, Safari and
+  // resistFingerprinting under-report hard), so we never state it as fact.
+  if (cores) bits.push(`${cores} CPU cores that it admits to`);
   if (hz && hz >= 118) bits.push(`a ${hz}Hz ${/apple|iphone|ipad|mac/i.test(ua) ? 'ProMotion ' : ''}screen`);
   if (phys) bits.push(`a ${phys[0]}×${phys[1]} display`);
 

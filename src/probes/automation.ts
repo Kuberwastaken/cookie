@@ -75,7 +75,11 @@ export const automationProbe: Probe = {
 
     // VM detection is a separate signal from headless, a real human can be
     // on a VM (CI runner, cloud desktop) without being a bot at all.
-    const vmRenderer = renderer ? /VMware|VirtualBox|Parallels|Microsoft Basic Render|llvmpipe/i.test(renderer) : false;
+    // Only adapters that genuinely mean "running inside a hypervisor". Excluded
+    // on purpose: "Microsoft Basic Render Driver" (shows up on bare metal that
+    // merely has Hyper-V installed, or lacks a GPU driver) and llvmpipe (plain
+    // software rendering on Linux). Both produced false "you're in a VM" calls.
+    const vmRenderer = renderer ? /VMware|VirtualBox|Parallels|QEMU|virgl/i.test(renderer) : false;
 
     return [
       sig('bot.score', 'Automation score', normalized, { display: normalized.toFixed(2) }),

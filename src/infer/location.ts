@@ -202,7 +202,17 @@ export const handshake: Inference = (s) => {
 // --- helpers ---------------------------------------------------------------
 
 function cleanOrg(org: string): string {
-  return org.replace(/,?\s*(inc|llc|ltd|gmbh|s\.a\.|co\.|corp)\.?$/i, '').trim();
+  // Registry org fields often carry a postal address ("Airtel Ltd.,224, Okhla
+  // industrial Area..."). Keep the leading name-ish segments, drop the address.
+  const parts = org.split(',').map((p) => p.trim()).filter(Boolean);
+  const kept: string[] = [];
+  for (const p of parts) {
+    if (/\d{2,}/.test(p) || /\b(road|street|area|phase|sector|floor|block|po box|district)\b/i.test(p)) break;
+    kept.push(p);
+    if (kept.join(' ').length > 40) break;
+  }
+  return (kept.join(', ') || parts[0] || org)
+    .replace(/,?\s*(inc|llc|ltd|gmbh|s\.a\.|co\.|corp)\.?$/i, '').trim();
 }
 
 /** Geo APIs sometimes return junk placeholders instead of a real ISP name. */

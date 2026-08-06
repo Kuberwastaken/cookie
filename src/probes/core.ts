@@ -235,20 +235,16 @@ export const codecProbe: Probe = {
     const support: Record<string, string> = {};
     for (const [name, type, el] of CANDIDATES) support[name] = el.canPlayType(type) || 'no';
 
-    let widevine = false;
-    try {
-      await navigator.requestMediaKeySystemAccess('com.widevine.alpha', [
-        { initDataTypes: ['cenc'], videoCapabilities: [{ contentType: 'video/mp4; codecs="avc1.42E01E"' }] },
-      ]);
-      widevine = true;
-    } catch { /* not supported */ }
+    // NOTE: we deliberately do NOT call requestMediaKeySystemAccess() to probe
+    // Widevine. It makes Firefox show a "allow DRM content?" prompt, which would
+    // make this page's central claim ("it asked for zero permissions") a lie.
+    // canPlayType() alone is passive and prompts nothing.
 
     return [
       sig('codecs.support', 'Codec support', support, {
         display: Object.entries(support).filter(([, r]) => r !== 'no').map(([k]) => k).join(', '),
         entropy: 2.5,
       }),
-      sig('codecs.widevine', 'Widevine DRM', widevine),
       sig('codecs.hash', 'Codec fingerprint', JSON.stringify(support)),
     ];
   },

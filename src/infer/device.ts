@@ -54,15 +54,17 @@ export const deviceModel: Inference = (s) => {
     }));
   }
 
-  // Fractional DPR is a Windows scaling tell; Apple only ever emits integer ratios.
+  // Fractional DPR means fractional UI scaling somewhere. It is NOT Windows-only
+  // (GNOME/KDE do fractional scaling too) and browser zoom moves it as well, so
+  // we report the number without guessing the OS or the cause.
   if (dpr % 1 !== 0 && !model) {
     const pct = Math.round(dpr * 100);
     out.push(claim({
       id: 'device.winScale',
-      text: `Your display scaling is set to *${pct}%*.`,
-      confidence: 'likely', act: 3, weight: 4,
+      text: `Your interface is scaled to about *${pct}%*, not the default.`,
+      confidence: 'guess', act: 3, weight: 4,
       evidence: ['display.pixelRatio'],
-      how: `A fractional device pixel ratio (${dpr}) only comes from Windows display scaling. macOS uses whole-number ratios. So you're on Windows, and you've bumped the UI size up from the default.`,
+      how: `Your device pixel ratio is ${dpr}, a fractional value. That comes from OS display scaling (Windows, or fractional scaling on GNOME/KDE) or from browser zoom. We can see that you've changed it from the default, but not which of those did it.`,
     }));
   }
 

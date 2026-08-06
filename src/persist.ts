@@ -22,6 +22,10 @@ export interface Visit {
   count: number;
   /** how many times this browser has completed the typing test before */
   typed: number;
+  /** false when the browser refused to keep our tag (ETP strict, storage
+   *  blocked, "clear on close"). We then cannot recognise a returning visitor,
+   *  and we say so instead of insisting it's their first visit. */
+  persisted: boolean;
   /** which backends still held a copy when we arrived */
   survivors: string[];
   /** backends that had been wiped and which we just restored */
@@ -147,10 +151,15 @@ export async function recall(): Promise<Visit> {
   }
 
   const visit: Visit = record
-    ? { ...record, typed: record.typed ?? 0, count: record.count + 1, survivors, restored }
-    : { id: newId(), first: Date.now(), count: 1, typed: 0, survivors: [], restored: [] };
+    ? { ...record, typed: record.typed ?? 0, count: record.count + 1, persisted: false, survivors, restored }
+    : { id: newId(), first: Date.now(), count: 1, typed: 0, persisted: false, survivors: [], restored: [] };
 
   await writeAll({ id: visit.id, first: visit.first, count: visit.count, typed: visit.typed });
+
+  // Verify the tag actually survived the write. If every backend comes back
+  // empty, storage is being blocked and we will never recognise this visitor.
+  const readBack = await Promise.all(BACKENDS.map((b) => b.get()));
+  visit.persisted = readBack.some((r) => !!r);
   return visit;
 }
 

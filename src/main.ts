@@ -21,7 +21,6 @@ import { cpuArchProbe, mathProbe, applePayProbe, mathmlProbe } from './probes/de
 import { metaProbe } from './probes/meta';
 import { behaviorCapture, analyzeTyping } from './probes/interactive';
 import { localNetProbe } from './probes/localnet';
-import { appsProbe } from './probes/apps';
 import { extProbe } from './probes/extensions';
 import { webrtcProbe } from './probes/webrtc';
 import { permissionProbe } from './probes/permissions';
@@ -32,7 +31,10 @@ const PASSIVE = [
   liesProbe, automationProbe, incognitoProbe,
   cpuArchProbe, mathProbe, applePayProbe, mathmlProbe, metaProbe,
 ];
-const INVASIVE = [localNetProbe, appsProbe, extProbe, webrtcProbe, permissionProbe];
+// appsProbe (scheme flooding) is deliberately NOT run: in Firefox it triggers an
+// "open this with an external app?" permission prompt, which would contradict
+// the page's core claim that it asks for nothing. We never used its results.
+const INVASIVE = [localNetProbe, extProbe, webrtcProbe, permissionProbe];
 
 const TYPING_TARGET = 'the quick brown fox jumps over the lazy dog';
 
@@ -133,7 +135,13 @@ async function main() {
   // Act 6: the invasive probes run automatically, no gate. The whole thesis is
   // that sites do this WITHOUT asking, so we do too, and say so out loud.
   const scan = dossier.scanning('Scanning your machine, open ports, real IP, granted permissions, paired devices');
-  const invasive = await runProbes(INVASIVE, { consented: true, signal: controller.signal });
+  // Hard ceiling: on iOS Safari the port scan and WebRTC gathering can hang
+  // indefinitely, which used to strand the page here. Whatever has finished by
+  // the deadline is what we use; the rest of the story always continues.
+  const invasive = await Promise.race([
+    runProbes(INVASIVE, { consented: true, signal: controller.signal }),
+    new Promise<SignalMap>((r) => setTimeout(() => r({}), 12000)),
+  ]);
   Object.assign(signals, invasive);
   scan.remove();
   const invasiveClaims = inferAll(signals).filter((c) => c.act === 6);

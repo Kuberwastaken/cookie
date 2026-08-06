@@ -76,15 +76,6 @@ export const sessionMeta: Inference = (s) => {
     }));
   }
 
-  if (s['meta.devtools']?.value === true) {
-    out.push(claim({
-      id: 'ses.devtools',
-      text: `Your *developer tools are open* right now. (We see you inspecting us.)`,
-      confidence: 'guess', act: 6, weight: 6,
-      evidence: ['meta.devtools'],
-      how: `Two tells: an open panel shrinks the page's viewport well below the window size, and the console only runs an object's getter when it's actually rendering it, we logged a tripwire object and the getter fired. Both are heuristics, so if you've got them open and we missed it, or you don't and we called it, that's the noise in this one.`,
-    }));
-  }
 
   // Note: we deliberately do NOT claim "free disk space" here. storage.estimate()
   // returns a quota the browser scales and heavily buckets, so it's a poor proxy

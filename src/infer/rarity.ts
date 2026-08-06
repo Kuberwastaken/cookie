@@ -72,7 +72,13 @@ export function rarityFunnel(s: SignalMap): { rows: RarityRow[]; oneIn: number }
   const br = browserOf(ua);
   rows.push({ label: 'Browser', value: br.label, pct: BROWSER_PREV[br.key] ?? 0.02 });
 
-  const langFull = (s['platform.languages']?.value as string[] | undefined)?.[0]
+  // Prefer the Accept-Language header: it carries the content languages you
+  // actually configured. navigator.languages often reports the browser's UI
+  // locale instead (en-US on an English build), which mislabelled people whose
+  // real preference is a smaller regional language.
+  const acceptLang = (s['edge.acceptLanguage']?.value as string | undefined)?.split(',')[0]?.trim();
+  const langFull = acceptLang
+    ?? (s['platform.languages']?.value as string[] | undefined)?.[0]
     ?? (s['env.locale']?.value as string | undefined) ?? 'en';
   const langBase = langFull.split('-')[0].toLowerCase();
   rows.push({ label: 'Primary language', value: LANG_NAME[langBase] ?? langFull, pct: LANG_PREV[langBase] ?? 0.01 });

@@ -136,8 +136,10 @@ function inferSoftware(detected: Set<string>): SoftwareMatch[] {
     'Latin Modern Roman', 'Latin Modern Math', 'CMU Serif', 'TeX Gyre Termes',
     'TeX Gyre Heros', 'TeX Gyre Pagella', 'XITS', 'STIX Two Math',
   ].filter((f) => detected.has(f));
-  if (latexFonts.length >= 1) {
-    out.push({ name: 'LaTeX / TeX Live / MacTeX', fonts: latexFonts, confidence: 'likely' });
+  // Require 2+ hits: a single Latin Modern / STIX face reaches machines via
+  // other software too, and "you write papers" was firing on people who don't.
+  if (latexFonts.length >= 2) {
+    out.push({ name: 'LaTeX / TeX Live / MacTeX', fonts: latexFonts, confidence: 'guess' });
   }
 
   const officeFonts = [

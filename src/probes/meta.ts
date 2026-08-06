@@ -33,28 +33,9 @@ export const metaProbe: Probe = {
       }
     } catch { /* ignore */ }
 
-    // --- DevTools detection (heuristic, hedge accordingly) ---
-    // 1) A docked panel shrinks the viewport well below the window size.
-    let bySize = false;
-    try {
-      const wGap = outerWidth - innerWidth;
-      const hGap = outerHeight - innerHeight;
-      bySize = wGap > 200 || hGap > 200;
-    } catch { /* ignore */ }
-
-    // 2) The console lazily serialises logged objects, a getter on a logged
-    // object only fires if a console panel is actually rendering it.
-    let byGetter = false;
-    try {
-      const bait: { toString?: unknown } = {};
-      Object.defineProperty(bait, 'id', { get() { byGetter = true; return 'nc'; }, configurable: true });
-      // eslint-disable-next-line no-console
-      console.debug('%c', 'font-size:0', bait);
-    } catch { /* ignore */ }
-
-    out.push(sig('meta.devtools', 'DevTools open', bySize || byGetter, {
-      display: bySize || byGetter ? `yes (${byGetter ? 'console serialisation' : 'window geometry'})` : 'no',
-    }));
+    // DevTools detection removed: both heuristics (viewport-gap and the
+    // console-getter tripwire) false-positived on people with DevTools closed,
+    // and a confidently wrong "we see you inspecting us" is worse than silence.
 
     // --- Free storage estimate ---
     try {
