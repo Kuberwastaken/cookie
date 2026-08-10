@@ -35,9 +35,3 @@ SOFTWARE.
 Note: this is a *modified* MIT license — condition (2) is an addition, so this
 is not the OSI-approved "MIT License", and tooling that expects verbatim MIT
 should treat it as a custom license.
-
-The attribution clause was prompted by issue #1
-(https://github.com/Kuberwastaken/cookie/issues/1) — thanks to @ZiClaud for the
-nudge to license this properly. That issue proposed AGPL; this takes the
-attribution-first path instead: the code stays freely reusable for learning and
-awareness, while anyone who actually ships it has to say where it came from.

@@ -12,8 +12,3 @@ education, or awareness — no strings beyond keeping the notice. If you deploy 
 (or a fork) as a real public-facing site or product, the one added condition is
 visible, user-facing credit to Kuber Mehta with a link back here, in the spirit
 of CC BY.
-
-Prompted by [#1](https://github.com/Kuberwastaken/cookie/issues/1) — thanks
-[@ZiClaud](https://github.com/ZiClaud) for the nudge. That issue floated AGPL;
-this went attribution-first so the code stays easy to learn from while still
-asking anyone who ships it to say where it came from.
