@@ -173,20 +173,91 @@ export function personalityTheatre(s: SignalMap): Claim[] {
   const skimmed = s['bhv.skimmed']?.value === true;
   const corrections = num(s, 'key.corrections') ?? num(s, 'bhv.backspaces') ?? 0;
   const dwell = num(s, 'bhv.dwellSec') ?? 0;
+  const tabAways = num(s, 'bhv.tabAways') ?? 0;
+  const depth = num(s, 'bhv.scrollDepth') ?? 0;
+  const scrollWpm = num(s, 'bhv.wpm') ?? 0;
+  const keyWpm = num(s, 'key.wpm') ?? 0;
+  const rhythmCv = num(s, 'key.rhythmCv');
+  const clamp = (x: number) => Math.max(0, Math.min(1, x));
 
-  // Deliberately flimsy heuristics, the point is that they're flimsy.
-  const traits = {
-    Openness: skimmed ? 'curious, jumps ahead' : 'methodical',
-    Conscientiousness: corrections > 3 ? 'careful, self-correcting' : 'moves fast, low friction',
-    Extraversion: efficiency > 0.85 ? 'decisive, direct' : 'exploratory',
-    Agreeableness: hes > 800 ? 'considered, cautious' : 'quick to commit',
-    Neuroticism: hes > 1200 || corrections > 5 ? 'a little anxious today' : 'relaxed',
+  // Deliberately flimsy Big Five scores, the point is that they're flimsy. Each
+  // is centred at 0.5 so an unremarkable session sits in the middle and only
+  // real behaviour pushes a trait to an extreme, so we don't hand everyone the
+  // same "methodical, relaxed" readout. Signals only nudge when they're actually
+  // present (a default 0.9 efficiency, meaning "no wandering measured", must NOT
+  // read as decisive), which is why every bump is gated on a real reading.
+  let openness = 0.5;
+  if (skimmed) openness += 0.35;
+  openness += Math.min(tabAways, 3) * 0.07;
+  if (scrollWpm > 700) openness += 0.12;
+  if (depth > 0 && depth < 0.5) openness += 0.1;
+  if (!skimmed && depth > 0.9 && scrollWpm > 0 && scrollWpm < 350) openness -= 0.28;
+
+  let consc = 0.5;
+  consc += Math.min(corrections, 5) * 0.06;
+  if (depth > 0.9) consc += 0.15;
+  else if (depth > 0 && depth < 0.4) consc -= 0.2;
+  if (hes > 700) consc += 0.1;
+  if (skimmed) consc -= 0.2;
+
+  let extra = 0.5;
+  if (hes > 0 && hes < 250) extra += 0.2;
+  if (hes > 900) extra -= 0.2;
+  if (keyWpm > 65) extra += 0.15;
+  if (efficiency < 0.6) extra -= 0.2;
+  if (skimmed) extra += 0.1;
+
+  let agree = 0.5;
+  if (hes > 800) agree += 0.2;
+  if (rhythmCv != null && rhythmCv < 0.55) agree += 0.12;
+  if (corrections > 3) agree += 0.1;
+  if (hes > 0 && hes < 250) agree -= 0.15;
+
+  let neuro = 0.5;
+  if (hes > 1200) neuro += 0.25; else if (hes > 700) neuro += 0.1;
+  neuro += Math.min(corrections, 6) * 0.05;
+  neuro += Math.min(tabAways, 3) * 0.06;
+  if (rhythmCv != null && rhythmCv > 0.85) neuro += 0.12;
+  if (dwell > 0 && dwell < 8 && !skimmed) neuro += 0.08;
+  if (hes > 0 && hes < 300 && corrections === 0) neuro -= 0.2;
+
+  // Three phrases per trait: the two you already had as the extremes, plus a
+  // middle for the (common) unremarkable case.
+  const PHRASES: Record<string, [string, string, string]> = {
+    Openness: ['methodical', 'thorough, but drifts', 'curious, jumps ahead'],
+    Conscientiousness: ['moves fast, low friction', 'organised enough', 'careful, self-correcting'],
+    Extraversion: ['exploratory', 'measured', 'decisive, direct'],
+    Agreeableness: ['quick to commit', 'easy-going', 'considered, cautious'],
+    Neuroticism: ['relaxed', 'a bit keyed up', 'a little anxious today'],
   };
-  const summary = Object.entries(traits).map(([k, v]) => `${k}: ${v}`).join(' · ');
+  const tier = (x: number) => (x < 0.42 ? 0 : x < 0.66 ? 1 : 2);
+
+  const scores = [
+    { key: 'Openness', score: clamp(openness) },
+    { key: 'Conscientiousness', score: clamp(consc) },
+    { key: 'Extraversion', score: clamp(extra) },
+    { key: 'Agreeableness', score: clamp(agree) },
+    { key: 'Neuroticism', score: clamp(neuro) },
+  ];
+  const traits: Record<string, string> = {};
+  for (const { key, score } of scores) traits[key] = PHRASES[key][tier(score)];
+
+  // Headline the two traits furthest from the middle, not always the same pair,
+  // so people stop all reading "methodical, relaxed". A per-session seed (fonts
+  // / GPU) breaks ties, so even a no-signal visit varies which two show.
+  const seedStr = str(s, 'fonts.hash') ?? str(s, 'gpu.renderer') ?? str(s, 'platform.ua') ?? '';
+  let seed = 0;
+  for (let i = 0; i < seedStr.length; i++) seed = (seed + seedStr.charCodeAt(i)) % 97;
+  const ranked = scores
+    .map((sc, i) => ({ ...sc, rank: Math.abs(sc.score - 0.5) + ((seed + i) % 5) / 1000 }))
+    .sort((a, b) => b.rank - a.rank);
+  const headline = `${traits[ranked[0].key]} and ${traits[ranked[1].key]}`;
+
+  const summary = scores.map(({ key }) => `${key}: ${traits[key]}`).join(' · ');
 
   return [claim({
     id: 'pf.ocean',
-    text: `Based on ${dwell} seconds of watching you, here's your personality: *${traits.Openness}, ${traits.Neuroticism}*. This is roughly as scientific as a horoscope, and we did it anyway, which is exactly the point.`,
+    text: `Based on ${dwell} seconds of watching you, here's your personality: *${headline}*. This is roughly as scientific as a horoscope, and we did it anyway, which is exactly the point.`,
     confidence: 'guess', act: 7, weight: 7,
     evidence: ['bhv.pathEfficiency', 'bhv.hesitationMs', 'bhv.dwellSec'],
     how: `Full Big Five guess: ${summary}. Real personality inference from digital behaviour is a genuine research field, Kosinski's 2013 study predicted traits from tens of thousands of people with hundreds of data points each. We have a few seconds of one session, which is almost no signal. Ad-tech makes exactly this kind of guess about you constantly, with far more data, and never shows you the result. We're showing you ours, and telling you it's mostly nonsense. Theirs is better, and you never see it.`,
