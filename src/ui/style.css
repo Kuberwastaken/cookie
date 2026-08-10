@@ -71,7 +71,7 @@ a:visited { color: #551a8b; }
   right: 1.1rem;
   font-family: var(--mono);
   font-size: 0.72rem;
-  color: var(--faint);
+  color: var(--grey);
   background: none;
   border: 0;
   cursor: pointer;

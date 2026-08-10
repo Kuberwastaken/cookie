@@ -58,7 +58,9 @@ export async function runIntro(root: HTMLElement, segments: IntroSegment[], auto
   hint.textContent = 'press enter →';
   document.body.append(skip, hint);
 
-  const skipAll = () => { state.skipped = true; };
+  // Skipping doesn't discard the intro, it prints the rest of it instantly:
+  // every remaining line still lands on the page, just without the typing.
+  const skipAll = () => { state.skipped = true; rush?.(); skip.remove(); hint.remove(); };
   skip.addEventListener('click', skipAll);
   const escHandler = (e: KeyboardEvent) => { if (e.key === 'Escape') skipAll(); };
   addEventListener('keydown', escHandler);
@@ -105,14 +107,12 @@ export async function runIntro(root: HTMLElement, segments: IntroSegment[], auto
   };
 
   for (const seg of segments) {
-    if (state.skipped) break;
     const lines = typeof seg === 'string' ? [seg] : await withTimeout(seg(), 8000, []);
     for (const line of lines) {
-      if (state.skipped) break;
       const p = document.createElement('p');
       p.className = 'say typing';
       root.append(p);
-      if (!reduce()) await sleep(340);
+      if (!reduce() && !state.skipped) await sleep(340);
       await typeInto(p, line);
       p.classList.remove('typing');
       follow(p);
