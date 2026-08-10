@@ -221,14 +221,15 @@ export function personalityTheatre(s: SignalMap): Claim[] {
   if (dwell > 0 && dwell < 8 && !skimmed) neuro += 0.08;
   if (hes > 0 && hes < 300 && corrections === 0) neuro -= 0.2;
 
-  // Three phrases per trait: the two you already had as the extremes, plus a
-  // middle for the (common) unremarkable case.
+  // Three phrases per trait, low → high. Each is a clean, self-contained
+  // descriptor (no internal commas or "and") so any two combine as a readable
+  // "you're X and Y" instead of a jumbled list.
   const PHRASES: Record<string, [string, string, string]> = {
-    Openness: ['methodical', 'thorough, but drifts', 'curious, jumps ahead'],
-    Conscientiousness: ['moves fast, low friction', 'organised enough', 'careful, self-correcting'],
-    Extraversion: ['exploratory', 'measured', 'decisive, direct'],
-    Agreeableness: ['quick to commit', 'easy-going', 'considered, cautious'],
-    Neuroticism: ['relaxed', 'a bit keyed up', 'a little anxious today'],
+    Openness: ['methodical', 'focused', 'restlessly curious'],
+    Conscientiousness: ['breezy', 'organised', 'meticulous'],
+    Extraversion: ['reserved', 'measured', 'decisive'],
+    Agreeableness: ['blunt', 'easygoing', 'diplomatic'],
+    Neuroticism: ['unflappable', 'a little wired', 'on edge'],
   };
   const tier = (x: number) => (x < 0.42 ? 0 : x < 0.66 ? 1 : 2);
 
@@ -251,13 +252,14 @@ export function personalityTheatre(s: SignalMap): Claim[] {
   const ranked = scores
     .map((sc, i) => ({ ...sc, rank: Math.abs(sc.score - 0.5) + ((seed + i) % 5) / 1000 }))
     .sort((a, b) => b.rank - a.rank);
-  const headline = `${traits[ranked[0].key]} and ${traits[ranked[1].key]}`;
+  const a = traits[ranked[0].key];
+  const b = traits[ranked[1].key];
 
   const summary = scores.map(({ key }) => `${key}: ${traits[key]}`).join(' · ');
 
   return [claim({
     id: 'pf.ocean',
-    text: `Based on ${dwell} seconds of watching you, here's your personality: *${headline}*. This is roughly as scientific as a horoscope, and we did it anyway, which is exactly the point.`,
+    text: `Based on ${dwell} seconds of watching you, here's the read: you're *${a}* and *${b}*. This is roughly as scientific as a horoscope, and we did it anyway, which is exactly the point.`,
     confidence: 'guess', act: 7, weight: 7,
     evidence: ['bhv.pathEfficiency', 'bhv.hesitationMs', 'bhv.dwellSec'],
     how: `Full Big Five guess: ${summary}. Real personality inference from digital behaviour is a genuine research field, Kosinski's 2013 study predicted traits from tens of thousands of people with hundreds of data points each. We have a few seconds of one session, which is almost no signal. Ad-tech makes exactly this kind of guess about you constantly, with far more data, and never shows you the result. We're showing you ours, and telling you it's mostly nonsense. Theirs is better, and you never see it.`,
