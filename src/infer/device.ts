@@ -1,34 +1,16 @@
 import type { Claim, Inference, SignalMap } from '../types';
+import { resolveAppleModel } from './apple-models';
 
 const claim = (c: Omit<Claim, 'confidence'> & Partial<Pick<Claim, 'confidence'>>): Claim => ({
   confidence: 'likely', ...c,
 });
-
-/** physical px (css × dpr) → a specific Apple product. Keyed "wxh@dpr". */
-const APPLE: Record<string, string> = {
-  '2560x1664@2': 'MacBook Air (13-inch, M-series)',
-  '2880x1864@2': 'MacBook Air (15-inch, M-series)',
-  '2880x1800@2': 'MacBook Air (15-inch, M-series)',
-  '2560x1600@2': 'MacBook Pro (13-inch)',
-  '3024x1964@2': 'MacBook Pro (14-inch, M-series)',
-  '3456x2234@2': 'MacBook Pro (16-inch, M-series)',
-  '4480x2520@2': 'iMac (24-inch, M-series)',
-  '5120x2880@2': 'a 27-inch 5K display (iMac or Studio Display)',
-  '750x1334@2': 'iPhone SE',
-  '1170x2532@3': 'iPhone 12 / 13 / 14',
-  '1179x2556@3': 'iPhone 14 Pro / 15 / 16',
-  '1290x2796@3': 'iPhone 14 Pro Max / 15 Plus / 16 Plus',
-  '1640x2360@2': 'an iPad (10th gen) or iPad Air',
-  '1668x2388@2': 'an iPad Pro (11-inch)',
-  '2048x2732@2': 'an iPad Pro (12.9-inch)',
-};
 
 function num(s: SignalMap, id: string): number | undefined {
   const v = s[id]?.value;
   return typeof v === 'number' ? v : undefined;
 }
 
-/** Resolve the exact device from screen geometry, then corroborate with the GPU string. */
+/** Resolve the device family from screen geometry (physical px → Apple model). */
 export const deviceModel: Inference = (s) => {
   const res = s['display.resolution']?.value as [number, number] | undefined;
   const dpr = num(s, 'display.pixelRatio');
@@ -36,21 +18,17 @@ export const deviceModel: Inference = (s) => {
   if (!res || !dpr) return out;
 
   const [w, h] = res;
-  // Try both orientations at the measured dpr and its rounding.
-  const keys = [
-    `${w}x${h}@${dpr}`, `${h}x${w}@${dpr}`,
-    `${w}x${h}@${Math.round(dpr)}`, `${h}x${w}@${Math.round(dpr)}`,
-  ];
-  const model = keys.map((k) => APPLE[k]).find(Boolean);
+  const model = resolveAppleModel(res, dpr);
 
   if (model) {
     out.push(claim({
       id: 'device.model',
+      // The label already carries its own article ("an iPhone …").
       text: `You're reading this on ${startsWithArticle(model) ? model : `a ${model}`}.`,
       confidence: 'likely',
       act: 3, weight: 8,
       evidence: ['display.resolution', 'display.pixelRatio'],
-      how: `${w}×${h} logical pixels at a ${dpr}× device pixel ratio is ${physical(w, h, dpr)} physical pixels, a resolution Apple ships on exactly one product line. No cookie, no permission: the screen just tells us.`,
+      how: `${w}×${h} logical pixels at a ${dpr}× device pixel ratio is ${physical(w, h, dpr)} physical pixels, a resolution Apple ships on a single model line (sometimes a couple that share a panel). No cookie, no permission: the screen just tells us.`,
     }));
   }
 

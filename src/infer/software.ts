@@ -26,11 +26,27 @@ export const softwareFromFonts: Inference = (s) => {
   return out;
 };
 
+const OS_NAMES: Record<string, string> = {
+  windows: 'Windows', macos: 'macOS', linux: 'Linux', android: 'Android',
+};
+
 /** OS and OS-version from font tells, often more precise than the User-Agent. */
 export const osFromFonts: Inference = (s) => {
   const ver = s['fonts.impliedOSVersion']?.value as string | undefined;
-  const os = s['fonts.impliedOS']?.value as string | undefined;
-  if (ver) {
+  const raw = s['fonts.impliedOS']?.value as string | undefined;
+  const ua = (s['platform.ua']?.value as string | undefined) ?? '';
+  const touch = typeof s['hw.touchPoints']?.value === 'number' ? (s['hw.touchPoints'].value as number) : 0;
+
+  // iOS and iPadOS ship the SAME system fonts as macOS, so the font bucket
+  // reports "macos" on an iPhone (which is how this used to announce "Macos" to
+  // iPhone users). The UA is the honest tell here: an iPhone says so outright,
+  // and an iPad has worn a desktop "Macintosh" UA since iPadOS 13 — the
+  // touchscreen is what gives that one away, since no Mac has one.
+  const isIphone = /iPhone|iPod/.test(ua);
+  const isIpad = /iPad/.test(ua) || (/Macintosh/.test(ua) && touch > 1);
+
+  // The version tell only exists for Windows (Segoe icon fonts); never for iOS.
+  if (ver && !isIphone && !isIpad) {
     return [claim({
       id: 'sw.osVersion',
       text: `You're on *${ver}*.`,
@@ -39,16 +55,22 @@ export const osFromFonts: Inference = (s) => {
       how: `${ver} ships a system font that earlier versions don't. We checked for it and it rendered, so we can name not just your OS but its version, without asking.`,
     })];
   }
-  if (os && os !== 'unknown') {
-    return [claim({
-      id: 'sw.os',
-      text: `Your operating system is *${cap(os)}*.`,
-      confidence: 'likely', act: 2, weight: 3,
-      evidence: ['fonts.impliedOS'],
-      how: `Certain fonts only exist on ${cap(os)}. They rendered, so that's what you're running, inferred from fonts, independent of whatever your User-Agent claims.`,
-    })];
-  }
-  return [];
+
+  const os = isIphone ? 'iOS' : isIpad ? 'iPadOS' : (raw && raw !== 'unknown' ? OS_NAMES[raw] : undefined);
+  if (!os) return [];
+
+  const fontBased = !isIphone && !isIpad;
+  return [claim({
+    id: 'sw.os',
+    text: `Your operating system is *${os}*.`,
+    confidence: fontBased ? 'likely' : 'certain', act: 2, weight: 3,
+    evidence: fontBased ? ['fonts.impliedOS'] : ['platform.ua', 'hw.touchPoints'],
+    how: fontBased
+      ? `Certain fonts only exist on ${os}. They rendered, so that's what you're running, inferred from fonts, independent of whatever your User-Agent claims.`
+      : isIpad
+        ? `${os} borrows macOS's fonts, so the font trick alone mistakes it for a Mac. The giveaway: a "Macintosh" user-agent paired with a touchscreen is an iPad, not a laptop.`
+        : `${os} borrows macOS's fonts, so the font trick alone would call this a Mac. Your User-Agent settles it — it still says iPhone.`,
+  })];
 };
 
 /**
@@ -161,5 +183,4 @@ function list(items: string[]): string {
   if (items.length === 2) return `${items[0]} and ${items[1]}`;
   return `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`;
 }
-function cap(s: string): string { return s.charAt(0).toUpperCase() + s.slice(1); }
 function slug(s: string): string { return s.toLowerCase().replace(/[^a-z0-9]+/g, '-'); }
