@@ -1,0 +1,43 @@
+MIT License (modified with an attribution clause for public deployments)
+
+Copyright (c) 2026 Kuber Mehta <https://kuber.studio>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the conditions below.
+
+1. The above copyright notice and this permission notice shall be included in
+   all copies or substantial portions of the Software.
+
+2. Attribution for public deployments. Using the Software for private study,
+   education, teaching, research, or awareness/demonstration is unconditionally
+   free under condition (1) alone. However, if you deploy the Software or a
+   derivative of it as a public-facing website, product, or service — that is,
+   you are running it "for real" rather than learning from it — you must also
+   give clear, visible, end-user-facing credit to the original author, in the
+   spirit of CC BY 4.0: a legible mention of "Kuber Mehta" together with a link
+   to the original project (https://github.com/Kuberwastaken/cookie), shown in
+   the deployed experience itself, not only in the source.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+Note: this is a *modified* MIT license — condition (2) is an addition, so this
+is not the OSI-approved "MIT License", and tooling that expects verbatim MIT
+should treat it as a custom license.
+
+The attribution clause was prompted by issue #1
+(https://github.com/Kuberwastaken/cookie/issues/1) — thanks to @ZiClaud for the
+nudge to license this properly. That issue proposed AGPL; this takes the
+attribution-first path instead: the code stays freely reusable for learning and
+awareness, while anyone who actually ships it has to say where it came from.
