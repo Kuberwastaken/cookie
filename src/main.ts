@@ -206,6 +206,10 @@ function renderFinale(dossier: Dossier, signals: SignalMap, fingerprint: string,
       Nothing on this page was stored on a server. Everything ran in your browser, or was
       read from the connection itself. The point isn't that this site is creepy, it's that
       the site you visit <i>after</i> this one can do all of it too, and won't tell you.
+      <br><br>PS: some of what you just read may be flat-out wrong. That helps less than
+      you'd think, fingerprinting doesn't need to be <i>accurate</i>, it needs to be
+      <i>consistent</i>. If your browser gets something wrong the same way on every site,
+      the mistake itself becomes part of your fingerprint.
       <br><br>Made as a weekend project while studying fingerprinting. <a href="https://github.com/Kuberwastaken/cookie" target="_blank" rel="noopener">It's open source too.</a>
       <br>Made with &lt;3 by <a href="https://kuber.studio" target="_blank" rel="noopener">Kuber Mehta</a> (<a href="https://x.com/kuberwastaken" target="_blank" rel="noopener">kuberwastaken</a>)
     </p>
