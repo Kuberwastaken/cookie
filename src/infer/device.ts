@@ -17,8 +17,14 @@ export const deviceModel: Inference = (s) => {
   const out: Claim[] = [];
   if (!res || !dpr) return out;
 
+  // Only ever match the Apple resolution table for an Apple user-agent. Plenty
+  // of Android panels land on the same pixel geometry as an iPad/Mac, and
+  // without this an Android could be told it's reading on a MacBook.
+  const ua = (s['platform.ua']?.value as string | undefined) ?? '';
+  const isApple = /iPhone|iPad|iPod|Macintosh|Mac OS X/.test(ua);
+
   const [w, h] = res;
-  const model = resolveAppleModel(res, dpr);
+  const model = isApple ? resolveAppleModel(res, dpr) : null;
 
   if (model) {
     out.push(claim({

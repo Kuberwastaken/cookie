@@ -1,19 +1,19 @@
 /**
- * Physical render resolution -> Apple model family. Keyed "WxH@dpr" on the
- * RENDER resolution (CSS points × devicePixelRatio), which is exactly what
- * Safari reports and what any page can read with zero permission.
+ * Physical render resolution -> Apple model. Keyed "WxH@dpr" on the RENDER
+ * resolution (CSS points × devicePixelRatio), which is exactly what Safari
+ * reports and what any page can read with zero permission.
  *
- * Two honest caveats baked into how this is used:
- *  - Several models ship the same panel, so a value names the *family*, not one
- *    SKU. That's the ceiling for this signal, and we say "likely", never "certain".
- *  - iPhone Display Zoom (and Mac display scaling) changes the reported logical
- *    size, so a zoomed device can collide with another family's key. Most people
- *    run the default, so we accept the occasional miss rather than guess wider.
+ * Deliberately Mac/iPad only. iPhones are left out on purpose: several models
+ * share one panel, so the honest answer is a long "14 Pro / 15 / 15 Pro / 16"
+ * list that reads as clutter, and Display Zoom shifts the reported size enough
+ * to collide families anyway — so an iPhone just gets called "an iPhone". This
+ * table also must only be consulted for an Apple user-agent (see deviceModel);
+ * a non-Apple device whose screen happens to match a key would otherwise be
+ * mislabeled, and plenty of Android panels land on these numbers.
  *
- * The earlier version of this map lived in device.ts and was looked up with
- * *logical* pixels against *physical* keys, so it never matched anything — the
- * "you're on an iPhone 15" line had never once fired. This resolver multiplies
- * by dpr first, which is the whole fix.
+ * The earlier version lived in device.ts and was looked up with *logical* pixels
+ * against *physical* keys, so it never matched anything. This resolver multiplies
+ * by dpr first, which is the fix.
  */
 export const APPLE_MODELS: Record<string, string> = {
   // --- Macs (native panel resolution; only matches at native/default 2× scaling) ---
@@ -25,29 +25,15 @@ export const APPLE_MODELS: Record<string, string> = {
   '4480x2520@2': 'an iMac (24-inch, M-series)',
   '5120x2880@2': 'a 27-inch 5K display (iMac or Studio Display)',
 
-  // --- iPhones (render resolution = CSS points × dpr) ---
-  '640x1136@2': 'an iPhone SE (1st gen), or an even older one',
-  '750x1334@2': 'an iPhone SE (2nd or 3rd gen), or a 6/7/8',
-  '828x1792@2': 'an iPhone XR or 11',
-  '1080x1920@3': 'an iPhone 6, 7 or 8 Plus',
-  '1125x2436@3': 'an iPhone X, XS or 11 Pro',
-  '1242x2688@3': 'an iPhone XS Max or 11 Pro Max',
-  '1080x2340@3': 'an iPhone 12 mini or 13 mini',
-  '1170x2532@3': 'an iPhone 12, 13 or 14 (or a 12/13 Pro)',
-  '1284x2778@3': 'an iPhone 12 Pro Max, 13 Pro Max or 14 Plus',
-  '1179x2556@3': 'an iPhone 14 Pro, 15, 15 Pro or 16',
-  '1290x2796@3': 'an iPhone 14 Pro Max, 15 Plus, 15 Pro Max or 16 Plus',
-  '1206x2622@3': 'an iPhone 16 Pro',
-  '1320x2868@3': 'an iPhone 16 Pro Max',
-
-  // --- iPads (render resolution) ---
+  // --- iPads (render resolution = CSS points × dpr) ---
   '1640x2360@2': 'an iPad (10th gen) or iPad Air',
   '1668x2388@2': 'an iPad Pro (11-inch)',
   '2048x2732@2': 'an iPad Pro (12.9-inch)',
 };
 
-/** Resolve a model family from logical screen pixels + devicePixelRatio, trying
- *  both orientations. Returns the label (already carrying its "a"/"an") or null. */
+/** Resolve a model from logical screen pixels + devicePixelRatio, trying both
+ *  orientations. Returns the label (already carrying its "a"/"an") or null.
+ *  Callers MUST gate this on an Apple user-agent — the map has no such guard. */
 export function resolveAppleModel(
   res: [number, number] | undefined,
   dpr: number | undefined,

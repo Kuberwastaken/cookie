@@ -1,7 +1,6 @@
 import type { SignalMap } from '../types';
 import type { IntroSegment } from './intro';
 import { classifyMacintosh } from '../infer/mac';
-import { resolveAppleModel } from '../infer/apple-models';
 
 /**
  * Builds the intro narration. Static thesis lines are literal (they type while
@@ -107,17 +106,13 @@ function deviceProfile(s: SignalMap, ua: string, gpuL: string, model: string, re
   if (/swiftshader|llvmpipe|vmware|virtualbox|parallels|basic render/.test(gpuL)) {
     return { headline: 'a virtual machine', tier: 'vm' };
   }
-  const dpr = typeof s['display.pixelRatio']?.value === 'number' ? (s['display.pixelRatio'].value as number) : undefined;
   if (/iPhone/.test(ua)) {
-    const model = resolveAppleModel(res, dpr);
     const minDim = res ? Math.min(res[0], res[1]) : 0;
     // Small logical width (SE / X-era) reads as the budget/older tier.
-    const tier: Tier = minDim && minDim <= 375 ? 'low' : 'high';
-    if (model) return { headline: model, tier };
     if (minDim && minDim <= 375) return { headline: 'an older iPhone (it still works, bless it)', tier: 'low' };
     return { headline: 'an iPhone', tier: 'high' };
   }
-  if (/iPad/.test(ua)) return { headline: resolveAppleModel(res, dpr) ?? 'an iPad', tier: 'high' };
+  if (/iPad/.test(ua)) return { headline: 'an iPad', tier: 'high' };
   if (/Android/.test(ua)) {
     // Adreno 7xx/8xx and Mali-G7xx/G78+ (and Immortalis) are flagship tiers.
     const adr = gpuL.match(/adreno\D*(\d{3,4})/);
