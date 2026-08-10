@@ -1,5 +1,6 @@
 import type { SignalMap } from '../types';
 import type { IntroSegment } from './intro';
+import { classifyMacintosh } from '../infer/mac';
 
 /**
  * Builds the intro narration. Static thesis lines are literal (they type while
@@ -70,7 +71,7 @@ function specLines(s: SignalMap): string[] {
   // resolution (e.g. 1080×2400), not the logical 420×934 the browser reports.
   const phys = res ? ([Math.round(res[0] * dpr), Math.round(res[1] * dpr)] as [number, number]) : undefined;
 
-  const { headline, tier } = deviceProfile(ua, gpuL, str('platform.model'), res, cores);
+  const { headline, tier } = deviceProfile(s, ua, gpuL, str('platform.model'), res, cores);
 
   // A VM gets no spec brag, the fact that it's fake IS the punchline.
   if (tier === 'vm') return [`Hold on, this isn't even real hardware. It's a *virtual machine*. We'll play along.`];
@@ -101,7 +102,7 @@ function specLines(s: SignalMap): string[] {
 }
 
 type Tier = 'high' | 'mid' | 'low' | 'vm';
-function deviceProfile(ua: string, gpuL: string, model: string, res: [number, number] | undefined, cores?: number): { headline: string; tier: Tier } {
+function deviceProfile(s: SignalMap, ua: string, gpuL: string, model: string, res: [number, number] | undefined, cores?: number): { headline: string; tier: Tier } {
   if (/swiftshader|llvmpipe|vmware|virtualbox|parallels|basic render/.test(gpuL)) {
     return { headline: 'a virtual machine', tier: 'vm' };
   }
@@ -122,12 +123,13 @@ function deviceProfile(ua: string, gpuL: string, model: string, res: [number, nu
     return { headline: 'an Android (…okay, no judgement)', tier: 'mid' };
   }
   if (/Macintosh|Mac OS X/.test(ua)) {
-    const m = gpuL.match(/apple\s+(m\d)(\s*(pro|max|ultra))?/i);
-    if (m) {
-      const chip = (m[1] + (m[3] ? ' ' + m[3] : '')).toUpperCase();
-      return { headline: `an Apple ${chip}`, tier: 'high' };
+    const mac = classifyMacintosh(s);
+    if (mac.kind === 'ipad') return { headline: 'an iPad dressed up as a Mac (the touchscreen gave it away)', tier: 'high' };
+    if (mac.kind === 'apple-silicon') {
+      return { headline: mac.chip ? `an Apple ${mac.chip}` : 'an Apple Silicon Mac (your browser hides which chip)', tier: 'high' };
     }
-    return { headline: 'an Intel Mac (a vintage one)', tier: 'low' };
+    if (mac.kind === 'intel') return { headline: 'an Intel Mac (a vintage one)', tier: 'low' };
+    return { headline: 'a Mac', tier: 'mid' };
   }
   if (/CrOS/.test(ua)) return { headline: 'a Chromebook', tier: 'low' };
   if (/rtx\s*(30|40|50)|radeon\s*rx\s*(6|7|9)\d{2}/.test(gpuL)) return { headline: 'a proper gaming rig', tier: 'high' };
@@ -145,7 +147,7 @@ function prettyGpu(raw: string): string {
   if (nv) return `an NVIDIA ${nv[1].replace(/\s+/g, ' ').toUpperCase()}`;
   const amd = raw.match(/(Radeon\s+RX\s*\d{3,4}\s*(?:XT)?)/i);
   if (amd) return amd[1];
-  const apple = raw.match(/Apple\s+M\d(\s*(Pro|Max|Ultra))?/i);
+  const apple = raw.match(/Apple\s+M\d+(\s*(Pro|Max|Ultra))?/i);
   if (apple) return `an Apple ${apple[0].replace(/Apple\s+/i, '')}`;
   if (/intel/i.test(raw)) return 'Intel graphics';
   const adreno = raw.match(/Adreno\D*(\d{3,4})/i);

@@ -1,4 +1,5 @@
 import type { Claim, Inference, SignalMap } from '../types';
+import { classifyMacintosh, MAC_EVIDENCE } from './mac';
 
 /**
  * The opening hook: a snarky one-line judgement of your hardware, shown before
@@ -97,17 +98,28 @@ export const deviceHook: Inference = (s) => {
     return [H(`Ew, you opened this on an *Android*? …okay. I guess. No judgement. (Some judgement.)`)];
   }
 
-  // 3) Mac.
+  // 3) Mac, or an iPad wearing the desktop "Macintosh" UA. Safari masks the
+  // GPU string to a bare "Apple GPU", so absence of an M-chip there proves
+  // nothing — classifyMacintosh folds in the CPU-arch and touchscreen signals.
   if (/Macintosh|Mac OS X/.test(ua)) {
-    const m = gpu.match(/apple\s+(m\d)(\s*(pro|max|ultra))?/i);
-    if (m) {
-      const chip = (m[1] + (m[3] ? ' ' + m[3] : '')).toUpperCase();
-      const highEnd = /pro|max|ultra/i.test(gpu);
-      return [H(highEnd
-        ? `*Nice machine.* Apple ${chip}, that's the expensive one. Taste and disposable income, a lethal combo.`
-        : `*Nice machine.* Apple Silicon (${chip}). Tasteful. Slightly smug. It suits you.`)];
+    const mac = classifyMacintosh(s);
+    const M = (t: string) => hook(t, HOW, [...ev, ...MAC_EVIDENCE]);
+    if (mac.kind === 'ipad') {
+      return [M(`An *iPad* pretending to be a Mac. The desktop user-agent was a nice try, but Macs don't have touchscreens.`)];
     }
-    return [H(`An *Intel Mac*. You've held onto this one a while, haven't you? Loyalty, or inertia, either way, respect.`)];
+    if (mac.kind === 'apple-silicon' && mac.chip) {
+      const highEnd = /pro|max|ultra/i.test(mac.chip);
+      return [M(highEnd
+        ? `*Nice machine.* Apple ${mac.chip}, that's the expensive one. Taste and disposable income, a lethal combo.`
+        : `*Nice machine.* Apple Silicon (${mac.chip}). Tasteful. Slightly smug. It suits you.`)];
+    }
+    if (mac.kind === 'apple-silicon') {
+      return [M(`*Nice machine.* Apple Silicon. Your browser hides which chip, but the CPU itself told on you.`)];
+    }
+    if (mac.kind === 'intel') {
+      return [M(`An *Intel Mac*. You've held onto this one a while, haven't you? Loyalty, or inertia, either way, respect.`)];
+    }
+    return [M(`A *Mac*. Beyond that it's keeping quiet, which, honestly, fair.`)];
   }
 
   // 4) ChromeOS.

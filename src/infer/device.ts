@@ -226,7 +226,7 @@ interface GpuGuess { name: string; article: string; exact: boolean; }
 function prettifyGpu(raw: string): GpuGuess | null {
   const r = raw.toLowerCase();
   // Apple Silicon
-  const apple = raw.match(/Apple\s+(M\d(?:\s*(?:Pro|Max|Ultra))?)/i);
+  const apple = raw.match(/Apple\s+(M\d+(?:\s*(?:Pro|Max|Ultra))?)/i);
   if (apple) return { name: `Apple ${apple[1]}`, article: 'an', exact: true };
   // NVIDIA
   const nv = raw.match(/(?:GeForce\s+)?(RTX\s*\d{4}\s*(?:Ti)?|GTX\s*\d{3,4}\s*(?:Ti)?)/i);
